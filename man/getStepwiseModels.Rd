@@ -14,8 +14,7 @@ getStepwiseModels(
   A_SAP = 1,
   file_name = "simulation_0",
   WAIC = TRUE,
-  n_cores = 10,
-  intervals = c("default", "increasing", "equal")
+  n_cores = 10
 )
 }
 \arguments{

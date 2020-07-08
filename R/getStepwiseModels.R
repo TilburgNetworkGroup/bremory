@@ -25,8 +25,7 @@ getStepwiseModels <- function(env = globalenv(),
                               A_SAP = 1, 
                               file_name = "simulation_0", 
                               WAIC = TRUE, 
-                              n_cores = 10,
-                              intervals = c("default","increasing","equal"))
+                              n_cores = 10)
 {
     # check for initializeREH environment
     if(is.null(env$initializeREH)){stop("initializeREH() function must be run first.")}
