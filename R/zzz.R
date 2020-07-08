@@ -1,0 +1,14 @@
+#' bremory: A package for learning the memory retention process of actors in relational event histories.
+#'
+#' The bremory package provides a set of functions to estimate the posterior trend of effects
+#' following the theoretical considerations in the relative paper 'title of the paper'
+#' 
+#' 
+#' @section \code{bremory} functions:
+#' The bremory functions ...
+#'
+#' @docType package
+#' @useDynLib bremory
+#' @importFrom Rcpp sourceCpp
+#' @name bremory
+NULL
