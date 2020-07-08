@@ -226,50 +226,6 @@ arma::mat ODRec(Rcpp::Environment counts,
         return out;
     }
 
-// TCShift (Transivity Closure Shift)
-arma::mat TCShift(Rcpp::Environment counts, 
-                   arma::mat intervals_backward,
-                   arma::mat edgelist, 
-                   arma::umat riskset,
-                   arma::umat riskset_matrix, 
-                   arma::vec t, 
-                   arma::uword M, 
-                   arma::uword k, 
-                   arma::uword K_q, 
-                   arma::uword n_cores)
-    {
-        arma::uword m; 
-        arma::mat TClosure = counts["TCShift"];
-        arma::mat out(M, TClosure.n_cols-2, arma::fill::zeros);
-        for(m = 1; m < M; m++){ 
-          arma::uword lb_ub_row = intervals_backward(((K_q*m)+k),2);
-          out.row(m) = TClosure(lb_ub_row,arma::span(2,TClosure.n_cols-1)); //((K_q*m)+k)
-        }
-        return out;
-    }  
-
-// CCShift (Cyclic Closure Shift)
-arma::mat CCShift(Rcpp::Environment counts, 
-                   arma::mat intervals_backward,
-                   arma::mat edgelist, 
-                   arma::umat riskset,
-                   arma::umat riskset_matrix, 
-                   arma::vec t, 
-                   arma::uword M, 
-                   arma::uword k, 
-                   arma::uword K_q, 
-                   arma::uword n_cores)
-    {
-        arma::uword m; 
-        arma::mat CClosure = counts["CCShift"];
-        arma::mat out(M, CClosure.n_cols-2, arma::fill::zeros);
-        for(m = 1; m < M; m++){ 
-          arma::uword lb_ub_row = intervals_backward(((K_q*m)+k),2);
-          out.row(m) = CClosure(lb_ub_row,arma::span(2,CClosure.n_cols-1)); //((K_q*m)+k)
-        }
-        return out;
-    } 
-
 // TClosure (Transivity Closure)
 arma::mat TClosure (Rcpp::Environment counts, 
                    arma::mat intervals_backward,
@@ -439,8 +395,6 @@ std::unordered_map<std::string, std::function<arma::mat(Rcpp::Environment, arma:
             {"IDRec", IDRec},
             {"ODSnd", ODSnd},
             {"ODRec", ODRec},
-            {"TCShift", TCShift},
-            {"CCShift", CCShift},
             {"TClosure", TClosure},
             {"CClosure", CClosure}
         };
