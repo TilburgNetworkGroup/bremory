@@ -1,6 +1,8 @@
 #include <RcppArmadillo.h>
 #include <Rcpp.h>
 #include <RcppParallel.h>
+#include <RcppDist.h>
+#include <mvt.h>
 #include <iostream>
 #include <omp.h>
 #include <RcppArmadilloExtensions/sample.h>
@@ -8,8 +10,9 @@
 #include <map>
 #include <iterator>
 #include <string>
-#include "estimation.h"
-#include "generation.h"
+#include "stepwise_estimation.h"
+#include "smooth_estimation.h"
+#include "decay_functions.h"
 
 
 
@@ -17,7 +20,8 @@
 
 //  BEGIN Preprocessing functions //
 
-//' getRiskset (obtain permutations of actors' id).
+
+//' getRiskset_old (obtain permutations of actors' id). (will become getRisksetMatrix) [[ TO REMOVE ]]
 //'
 //' @param actors vector of actors' id's (either integer or char vector).
 //' @param N number of actors in the network.
@@ -27,7 +31,7 @@
 //'
 //' @export
 // [[Rcpp::export]]
-arma::mat getRiskset(arma::vec actors_id, arma::uword N, bool selfedges){
+arma::mat getRiskset_old(arma::vec actors_id, arma::uword N, bool selfedges){
     arma::uword i,j;
     if(selfedges == 0){
         arma::mat riskset(N*N,2);
@@ -60,7 +64,7 @@ arma::mat getRiskset(arma::vec actors_id, arma::uword N, bool selfedges){
 }
 
 
-//' getRisksetMatrix
+//' getRisksetMatrix_old (will become getRisksetCube) [[ TO REMOVE ]]
 //'
 //' @param riskset matrix (sender and receiver integer id's by column)
 //' @param N number of actors in the network.
@@ -69,7 +73,7 @@ arma::mat getRiskset(arma::vec actors_id, arma::uword N, bool selfedges){
 //'
 //' @export
 // [[Rcpp::export]]
-arma::umat getRisksetMatrix(arma::mat riskset , arma::uword N) {
+arma::umat getRisksetMatrix_old(arma::mat riskset , arma::uword N) {
     arma::uword i;
     arma::umat riskset_mat(N,N);
     riskset_mat.fill(N*N*N);
@@ -146,7 +150,7 @@ void getIntervals(Rcpp::Environment env,
     for (i = 1; i < M; i++) 
     {
         // Updating intervals to the i-th iteration:
-        double t = time(i-1); //' current time
+        double t = time(i); //' current time
         arma::vec time_vec = time(arma::span(0,(i-1))); 
         
         for (k = 0; k < K_q; k++)
@@ -184,6 +188,7 @@ void getIntervals(Rcpp::Environment env,
     }
     statisticsREH.assign("intervals_backward",intervals_backward);
 }
+
 
 //' getCountsOMP
 //'
@@ -285,6 +290,54 @@ arma::cube getEndoEffects(Rcpp::Environment env)
     return stats_array;
 }
 
+//' getSmoothEndoEffects
+//'
+//' @param env environment where the user is currently working (usually the global one which can be accessed via 'globalenv()' function or '.GlobalEnv' object)
+//' @param endo_effects string vector indicating the endogenous effects
+//' @param decay_fun function for the decay of past events influence
+//' @param pars matrix with parameters for the decay_fun
+//' @param n_cores number of corse to be used in the parallelization
+//'
+//' @return array of Statistics specified 
+//'
+//' @export
+// [[Rcpp::export]]
+arma::cube getSmoothEndoEffects(Rcpp::List reh, std::vector<std::string> endo_effects, Rcpp::List endo_memory_pars, arma::uword n_cores)
+{   
+    arma::uword M = reh["M"];
+    arma::uword N = reh["N"];
+    arma::uword C = reh["C"];
+    arma::uword D = reh["D"];
+    //Rcpp::DataFrame edgelist = reh["edgelist"];
+    arma::umat risksetMatrix = reh["risksetMatrix"];
+    arma::ucube risksetCube = reh["risksetCube"];
+    arma::mat rehBinary = reh["rehBinary"];
+    //Rcpp::RObject 
+    Rcpp::DataFrame edgelist_loc = Rcpp::as<Rcpp::DataFrame>(reh["edgelist"]);
+    arma::uvec actor1 = Rcpp::as<arma::uvec>(edgelist_loc["actor1"]);
+    arma::uvec actor2 = Rcpp::as<arma::uvec>(edgelist_loc["actor2"]);
+    arma::uvec type = Rcpp::as<arma::uvec>(edgelist_loc["type"]);
+    arma::umat edgelist(M,3);
+    edgelist.col(0) = actor1;
+    edgelist.col(1) = actor2;
+    edgelist.col(2) = type;
+
+    arma::uword P = endo_effects.size(); // check if .size() works with std::vector<std::string>
+    arma::vec t = edgelist_loc["time"];
+    arma::uword p;
+
+    // allocating memory for the output array
+    arma::cube stats_array(M,D,P); 
+
+    for(p = 0; p < P; p++){
+        arma::mat out = computeSmoothEffect(endo_effects[p], endo_memory_pars[p], edgelist, rehBinary, risksetMatrix, risksetCube, t, M, N, C, D, n_cores);
+        stats_array.slice(p) = out;
+        //Rcpp::Rcout << "computation of " << endo_effects[p] << " successfully completed!\n"; // printing out some comments (will be removed)
+    }
+    
+    return stats_array;
+}
+
 //' lpd (Log-Pointwise Density of REM)
 //'
 //' @param pars is a vector of parameters (note: the order must be aligned witht the column order in 'stats')
@@ -312,6 +365,91 @@ double lpd(arma::vec pars, arma::mat stats, arma::uvec event, double interevent_
         return lpd;
     }
 
+
+//' nllik (negative log-likelihood rem model)
+//'
+//' @param pars is a vector of parameters (note: the order must be aligned witht the column order in 'stats')
+//' @param stats is a cube of dimensions n_dyads*variables*M with statistics of interest by column and dyads by row.
+//' @param event_binary is a matrix of ones and zeros of dimensions M*n_dyads : 1 indicating the observed dyad and 0 the non observed dyads.
+//' @param interevent_time the vector of time differences between the current time point and the previous event time.
+//' @param n_cores n_cores
+//'
+//' @return log-pointwise density value of a specific time point
+//'
+//' @export
+// [[Rcpp::export]]  
+double nllik(arma::vec pars, arma::cube stats, arma::umat event_binary, arma::vec interevent_time, int n_cores){
+        arma::uword n_dyads = event_binary.n_cols;
+        arma::uword i,m;
+        arma::uword M = event_binary.n_rows;
+        arma::vec log_lambda(n_dyads,arma::fill::zeros) ;
+        arma::vec llik(M,arma::fill::zeros);
+
+        omp_set_dynamic(0);           // disabling dynamic teams
+        omp_set_num_threads(n_cores); // number of threads for all consecutive parallel regions
+        #pragma omp parallel for private(m,i,log_lambda) shared(n_dyads,M,stats,event_binary,interevent_time,llik)
+        for(m = 0; m < M; m++)
+        {
+            log_lambda = stats.slice(m) * pars;
+            for(i = 0; i < n_dyads; i++){
+                if(event_binary(m,i) == 0){
+                    llik(m) -= exp(log_lambda(i))*interevent_time(m);
+                }
+                else{
+                    llik(m) += log_lambda(i)-exp(log_lambda(i))*interevent_time(m);
+                }
+            }
+        }
+        return -sum(llik);
+
+    }
+
+//' performBSIR
+//' 
+//' A function that performs the BSIR on the REM model
+//'
+//' @param nsim number of simulations
+//' @param mean vector of model MLEs
+//' @param sigma matric of variances and covariances 
+//' @param df degrees of freedom for the multivariate Student t (used as proposal distribution)
+//' @param stats cube of statistics [D*P*M]
+//' @param event_binary matrix of 1/0
+//' @param interevent_time vector of interevent times
+//' @param n_cores number of cores to be used in the parallelized calculation of the nllik()
+//'
+//' @return log-pointwise density value of a specific time point
+//'
+//' @export
+// [[Rcpp::export]]  
+Rcpp::List performBSIR(arma::uword nsim,
+                       arma::vec mean, 
+                       arma::mat sigma, 
+                       double df,
+                       arma::cube stats,
+                       arma::umat event_binary, 
+                       arma::vec interevent_time,
+                       arma::uword n_cores){
+    // (0) create output empty list
+    Rcpp::List out = Rcpp::List::create();
+    arma::uword i;
+    arma::vec density_posterior(nsim,arma::fill::ones);
+
+    // (1) generate from a multivariate Student t and save both draw and density value
+    arma::mat random_t = rmvt(nsim, mean,sigma, df);
+    out["draws"] = random_t;
+
+    arma::vec density_t = dmvt(random_t, mean, sigma, df, false);
+    out["densities"] = density_t;
+
+    // (2) evaluate the generated value with nnlik and get the density
+    for(i = 0; i < nsim; i++){
+        arma::vec draw_loc = random_t.row(i).t();
+        density_posterior(i) = nllik(draw_loc,stats,event_binary,interevent_time,n_cores);
+    }
+    out["densities_post"] = density_posterior;
+
+    return out;
+    }
 
 //' getWAIC
 //'
@@ -507,49 +645,15 @@ arma::cube getDraws(arma::uvec sample_models,
 
 //  END Statistics functions //
 
-//  BEGIN Generation functions //
 
-//' updateEndoEffects 
+//' tryClone
 //'
+//' @param input data.frame object
 //'
-//' @param effects string vector of endogenous effects to calculate
-//' @param beta_endo list of parameters per each effect (the order must follow the one of the vector 'effects')
-//' @param binaryREH binary Relational Event History until event at t(M_partial)
-//' @param elapsed_time vector of elapsed times since each past event until t(M_partial)
-//' @param edgelist edgelist (partial edgelist until M_partial)
-//' @param riskset matrix of (sender,receiver) combinations in the case of no selfedges
-//' @param riskset_matrix square matrix where the (row,colum)=(sender,receiver) returns the corresponding column index in the matrix binaryREH_partial
-//' @param N number of actors
-//' @param M_partial partial event sequence length
+//' @return input [dataframe]
 //'
-//' @return matrix of statistics per dyad (where a continuous effect decay for each statistics was specified)
-//' 
 //' @export
 // [[Rcpp::export]]
-arma::vec updateEndoEffects(std::vector<std::string> effects,
-                            Rcpp::List beta_endo,
-                            Rcpp::Environment binaryREH,
-                            arma::vec elapsed_time,
-                            arma::mat edgelist,
-                            arma::umat riskset,
-                            arma::umat riskset_matrix,
-                            arma::uword N,
-                            arma::uword M_partial) {
-    arma::mat out(N*(N-1),effects.size(),arma::fill::zeros);
-    arma::uword P,p,d;
-    P = effects.size();
-    arma::mat elapsed_time_matrix_loc(M_partial,N*(N-1),arma::fill::zeros);
-
-    for(d = 0; d < N*(N-1); d++){
-        elapsed_time_matrix_loc.col(d) = elapsed_time;
-    }
-
-    for(p = 0; p < P; p++){
-        Rcpp::List beta_endo_p = beta_endo[effects[p]];
-        out.col(p) = updateEffect(effects[p], beta_endo_p, binaryREH, elapsed_time_matrix_loc, edgelist, riskset, riskset_matrix, N, M_partial);
-    }
-
-    return sum(out,1);
+Rcpp::DataFrame tryClone(Rcpp::DataFrame input){
+    return input;
 }
-
-//  END Generation functions //

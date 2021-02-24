@@ -5,14 +5,14 @@
 #include <typeinfo>
 #include <iterator>
 #include <string>
-#include "generation.h"
+#include "decay_functions.h"
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
-#ifndef ESTIMATION_H
-#define ESTIMATION_H
+#ifndef STEPWISE_ESTIMATION_H
+#define STEPWISE_ESTIMATION_H
 
 
 #define LOG(x) std::cout << x << "\n"
@@ -226,8 +226,9 @@ arma::mat ODRec(Rcpp::Environment counts,
         return out;
     }
 
+
 // TClosure (Transivity Closure)
-arma::mat TClosure (Rcpp::Environment counts, 
+arma::mat TClosure(Rcpp::Environment counts, 
                    arma::mat intervals_backward,
                    arma::mat edgelist,
                    arma::umat riskset,
@@ -284,10 +285,11 @@ arma::mat TClosure (Rcpp::Environment counts,
             arma::mat edgelist_loc = edgelist(arma::span(lb_ub(0),lb_ub(1)),arma::span::all);
             for(i = 0; i < edgelist_loc.n_rows; i++){
                   // backward seeking, every event is an (l,j) type of event
-                elapsed_lj = edgelist(m-1,0) - edgelist_loc(i,0);
+                elapsed_lj = edgelist(m,0) - edgelist_loc(i,0);
                 time_lj = edgelist_loc(i,0);
                 t_star = time_lj - elapsed_lj; 
-               if((t_star >= edgelist(0,0)) & (elapsed_lj>0)){
+                if(t_star < edgelist(0,0)) t_star = edgelist(0,0);
+               if(elapsed_lj>0){
                     arma::urowvec lower = arma::find(edgelist.col(0) <= t_star).t();
                     lower_index = max(lower);    
                     arma::mat edgelist_sub = edgelist(arma::span(lower_index,(lb_ub(0)+i)),arma::span::all);
@@ -296,12 +298,14 @@ arma::mat TClosure (Rcpp::Environment counts,
                                 out(m,riskset_matrix(edgelist_sub(d,1),edgelist_loc(i,2))) += 1; 
                         }
                     }                                   
-                } 
-                if((t_star >= edgelist(0,0)) & ((lb_ub(0)+i)>0)){  // when elapsed_lj == 0    
-                    if((edgelist((lb_ub(0)+i-1),2) == edgelist((lb_ub(0)+i),1)) & (edgelist((lb_ub(0)+i-1),1) != edgelist((lb_ub(0)+i),2))){
-                            out(m,riskset_matrix(edgelist((lb_ub(0)+i-1),1),edgelist((lb_ub(0)+i),2))) += 1; 
-                    }
-                }                   
+                }
+                else{ // when elapsed_lj == 0 
+                    if((lb_ub(0)+i)>0){ 
+                        if((edgelist((lb_ub(0)+i-1),2) == edgelist((lb_ub(0)+i),1)) & (edgelist((lb_ub(0)+i-1),1) != edgelist((lb_ub(0)+i),2))){
+                                out(m,riskset_matrix(edgelist((lb_ub(0)+i-1),1),edgelist((lb_ub(0)+i),2))) += 1; 
+                        }
+                    }  
+                }                 
             }
         } 
 

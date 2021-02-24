@@ -12,10 +12,12 @@
 initializeREH <- function(edgelist,
                           riskset = NULL,
                           directed = TRUE,
+                          weights = NULL,
                           env = globalenv()){
                                    
         if(missing(edgelist) | !is.data.frame(edgelist)){stop("User must provide an edgelist as a dataframe object. See documentation for further information about the edgelist structure")}
-        env$initializeREH <- new.env()            
+        env$initializeREH <- new.env()     
+        if(!is.null(weights)) {env$initializeREH$weights <- weights}       
         env$initializeREH$actors <- if(is.null(riskset)){unique(c(edgelist$sender,edgelist$receiver))}
                       else{unique(c(as.matrix(riskset)[,1],as.matrix(riskset)[,2]))}
         env$initializeREH$N <- length(env$initializeREH$actors)
@@ -23,16 +25,18 @@ initializeREH <- function(edgelist,
 
  
         env$initializeREH$actors <- data.frame(actors = env$initializeREH$actors, integer_id = c(0:(env$initializeREH$N-1)))
-        env$initializeREH$riskset <- if(is.null(riskset)){matrix(na.omit(getRiskset(actors_id = env$initializeREH$actors$integer_id, N = env$initializeREH$N, selfedges = FALSE)),ncol=2)}
+        env$initializeREH$riskset <- if(is.null(riskset)){matrix(na.omit(getRiskset_old(actors_id = env$initializeREH$actors$integer_id, N = env$initializeREH$N, selfedges = FALSE)),ncol=2)}
                        else{riskset}
-        env$initializeREH$n_dyads <- dim(env$initializeREH$riskset)[1]
 
+        env$initializeREH$n_dyads <- dim(env$initializeREH$riskset)[1]
+        
         env$initializeREH$dyad_position_array <- numeric(env$initializeREH$n_dyads)  
         env$initializeREH$old_riskset <- t(apply(env$initializeREH$riskset,1, function(x) c(env$initializeREH$actors$actors[which(env$initializeREH$actors$integer_id==x[1])],env$initializeREH$actors$actors[which(env$initializeREH$actors$integer_id==x[2])])))
         
-        for(i in 1:env$initializeREH$n_dyads) env$initializeREH$dyad_position_array[i] <- which((env$initializeREH$riskset[,1]==env$initializeREH$old_riskset[i,1]) & (env$initializeREH$riskset[,2]==env$initializeREH$old_riskset[i,2]))
+        for(i in 1:env$initializeREH$n_dyads) {env$initializeREH$dyad_position_array[i] <- which((env$initializeREH$riskset[,1]==env$initializeREH$old_riskset[i,1]) & (env$initializeREH$riskset[,2]==env$initializeREH$old_riskset[i,2]))}
 
-        env$initializeREH$riskset_matrix <- getRisksetMatrix(riskset = env$initializeREH$riskset, N = env$initializeREH$N)               
+        # it is commented becuase of the edits with the new generating algorithm
+        env$initializeREH$riskset_matrix <- getRisksetMatrix_old(riskset = env$initializeREH$riskset, N = env$initializeREH$N)               
         
         edgelist <- convertEdgelist(edgelist = edgelist, riskset = env$initializeREH$riskset,  actors = env$initializeREH$actors, rem = FALSE)               
         env$initializeREH$edgelist <- data.matrix(edgelist) # we save the edgelist as a matrix

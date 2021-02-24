@@ -6,19 +6,25 @@
 \usage{
 generateWidths(
   env = globalenv(),
-  K_range = c(2:6),
+  K = NULL,
   nsim_per_K = 200,
-  max_width = NULL
+  max_width = NULL,
+  min_diff = NULL,
+  intervals = c("all", "increasing", "decreasing", "equal")
 )
 }
 \arguments{
 \item{env}{environment where the user is currently working}
 
-\item{K_range}{intervals dimensions}
+\item{K}{intervals dimensions}
 
 \item{nsim_per_K}{number of simulations per K}
 
 \item{max_width}{maximum time length}
+
+\item{min_diff}{minimum width (diff will be changed to width)}
+
+\item{intervals}{type of intervals to be generated}
 }
 \value{
 the function updates the object width in the getStepwiseModels environment.

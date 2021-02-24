@@ -4,7 +4,18 @@
 \alias{PSIS_LFO_CV_1_SAP}
 \title{PSIS_LFO_CV_1_SAP}
 \usage{
-PSIS_LFO_CV_1_SAP(n_dyads, eventlist, statslist, t, M, L, n_sim_is, tau, cores)
+PSIS_LFO_CV_1_SAP(
+  n_dyads,
+  eventlist,
+  statslist,
+  t,
+  first_event,
+  last_event,
+  L,
+  n_sim_is,
+  tau,
+  cores
+)
 }
 \arguments{
 \item{n_dyads}{...}
@@ -15,13 +26,17 @@ PSIS_LFO_CV_1_SAP(n_dyads, eventlist, statslist, t, M, L, n_sim_is, tau, cores)
 
 \item{t}{...}
 
-\item{M}{...}
+\item{first_event}{...}
+
+\item{last_event}{...}
 
 \item{L}{...}
 
 \item{n_sim_is}{...}
 
 \item{tau}{...}
+
+\item{cores}{...}
 }
 \value{
 the function doesn't return any output but updates objects inside the environment 'stepwiseModelsREH'

@@ -253,7 +253,11 @@ getPosteriorDefault <- function(env = NULL ,
     if(is.null(env)) stop("env is not specified.")
 
     max_width <- max(na.omit(as.vector(env$widths)))
-    elapsed_time <- seq(from = 1e-05, to = max_width,length = n_knots)
+    if(length(n_knots)==1)
+    {elapsed_time <- seq(from = 1e-04, to = max_width-1e-04 ,length = n_knots)} #
+    {
+        elapsed_time <- n_knots
+    }
 
     out <- list()
     out$elapsed_time <- elapsed_time
@@ -317,16 +321,17 @@ getModelsWeights <- function(input = NULL, weights = c("BIC","pseudoBMAplus","st
     # BIC
     if(status[1]){
         if(is.null(input$BIC)) stop("BIC vector was not found.")
-        BIC_weights <- exp(-(input$BIC/2-min(input$BIC/2))) / sum(exp(-(input$BIC/2-min(input$BIC/2))))
+        bic_w <- (-input$BIC/2)
+        BIC_weights <- exp(bic_w-max(bic_w)) / sum(exp(bic_w-max(bic_w))) #-(input$BIC/2-min(input$BIC/2))
         out$BIC <- BIC_weights
     }
     
-    # pseudoBMAplus
+    # pseudoBMAplus #temporarily changed elpd_lfo
     if(status[2]){
-        if(is.null(input$elpd_lfo)) stop("ELPD matrix was not found.")
+        if(is.null(input$elpd_lfo)) stop("ELPD matrix was not found.") 
 
         # Performs pseudoBMA+ by using elpd_(psis)_lfo
-        elpd_lfo <- input$elpd_lfo
+        elpd_lfo <- input$elpd_lfo 
 
         # algorithm with loo::pseudobma_weights() function
         out$pseudoBMAplus <- as.vector(loo::pseudobma_weights(elpd_lfo))
@@ -392,15 +397,15 @@ getModelsWeights <- function(input = NULL, weights = c("BIC","pseudoBMAplus","st
     if(status[4]){
         if(is.null(input$elpd_waic)) stop("ELPD (WAIC) matrix was not found.")
         #if(dim(na.omit(input$elpd_waic))[2]<input$Q) stop("Not all the stepwise models have an ELPD (WAIC) estimated (vcov matrix was singular).")
-        elpd_waic <- apply(rbind(input$elpd_waic),2,sum)
-        WAIC_weights <- exp((elpd_waic/2-max(elpd_waic/2))) / sum(exp((elpd_waic/2-max(elpd_waic/2))))
+        elpd_waic <- apply(rbind(input$elpd_waic),2,sum) 
+        WAIC_weights <- exp((elpd_waic-max(elpd_waic))) / sum(exp((elpd_waic-max(elpd_waic)))) 
         out$WAIC <- WAIC_weights
     }
 
     #loglik
     if(status[5]){
         if(is.null(input$loglik)) stop("loglik vector was not found.")
-        loglik_weights <- exp((input$loglik/2-max(input$loglik/2))) / sum(exp((input$loglik/2-max(input$loglik/2))))
+        loglik_weights <- exp((input$loglik-max(input$loglik))) / sum(exp((input$loglik-max(input$loglik)))) 
         out$loglik <- loglik_weights
     }  
 
@@ -408,8 +413,8 @@ getModelsWeights <- function(input = NULL, weights = c("BIC","pseudoBMAplus","st
     if(status[6]){
         if(is.null(input$elpd_lfo)) stop("ELPD (LFO) matrix was not found.")
         #if(dim(na.omit(input$elpd_waic))[2]<input$Q) stop("Not all the stepwise models have an ELPD (WAIC) estimated (vcov matrix was singular).")
-        elpd_lfo <- apply(rbind(input$elpd_lfo),2,sum)
-        elpd_lfo_weights <- exp((elpd_lfo/2-max(elpd_lfo/2))) / sum(exp((elpd_lfo/2-max(elpd_lfo/2))))
+        elpd_lfo <- apply(rbind(input$elpd_lfo),2,sum) 
+        elpd_lfo_weights <- exp((elpd_lfo-max(elpd_lfo))) / sum(exp((elpd_lfo/2-max(elpd_lfo)))) 
         out$elpd_lfo <- elpd_lfo_weights
     }
     return(out)
@@ -517,8 +522,11 @@ plotPosterior <- function(posterior_draws, type = c("trend","credibility interva
     n_knots <- dim(posterior_draws$posterior_draws[[weights[1]]])[3]
     P <- dim(posterior_draws$posterior_draws[[weights[1]]])[2]
     stats_names <- dimnames(posterior_draws$posterior_draws[[weights[1]]])[[2]]
-    credibility_intervals <- list()
-    for(w in 1:W) credibility_intervals[[weights[w]]] <- apply(posterior_draws$posterior_draws[[weights[w]]],c(2,3),function(x) quantile(x,c(0.025,0.5,0.975),na.rm=TRUE))
+    credibility_intervals <- hd_intervals <- list() #<- posterior_mean
+    for(w in 1:W){
+        credibility_intervals[[weights[w]]] <- apply(posterior_draws$posterior_draws[[weights[w]]],c(2,3),function(x) quantile(x,c(0.025,0.5,0.975),na.rm=TRUE))
+        hd_intervals[[weights[w]]] <- apply(posterior_draws$posterior_draws[[weights[w]]],c(2,3),function(x) as.vector(HDInterval::hdi(x)))        #posterior_mean[[weights[w]]] <- apply(posterior_draws$posterior_draws[[weights[w]]],c(2,3),function(x) mean(x,na.rm=TRUE))
+    }
     
     data <- list()
     for(p in 1:P){
@@ -544,13 +552,14 @@ plotPosterior <- function(posterior_draws, type = c("trend","credibility interva
         {
             ggplot_obj_loc <- ggplot(data[[stats_names[p]]], aes(x=timeElapsed, y=effect, group=weights, color=weights)) + geom_line()
 
-            if(stats_names[p]%in%names(true_effects$exo_effects)){ 
-                ggplot_obj_loc <- ggplot_obj_loc + geom_hline(aes_string(yintercept = true_effects$exo_effects[[stats_names[p]]],color = "TRUE"))
+            if(!is.null(true_effects)){
+                if(stats_names[p]%in%names(true_effects$exo_effects)){ 
+                    ggplot_obj_loc <- ggplot_obj_loc + geom_hline(aes_string(yintercept = true_effects$exo_effects[[stats_names[p]]],color = "TRUE"))
+                    }
+                else{
+                    ggplot_obj_loc <- ggplot_obj_loc + stat_function(fun=vdecay, args=list(type = true_effects$endo_effects[[stats_names[p]]]$decay_type, pars = true_effects$endo_effects[[stats_names[p]]]$pars), geom="line", aes(color="TRUE"),linetype="dashed")
                 }
-            else{
-                ggplot_obj_loc <- ggplot_obj_loc + stat_function(fun=vdecay, args=list(type = true_effects$endo_effects[[stats_names[p]]]$decay_type, pars = true_effects$endo_effects[[stats_names[p]]]$pars), geom="line", aes(color="TRUE"),linetype="dashed")
             }
-
             #ggplot_obj_loc <- ggplot_obj_loc + scale_color_gradientn(colours = rainbow(W)) + ggtitle(paste("Trend of",stats_names[p],sep=" "))
             #scale_colour_manual("Legend", values = c("BIC" ="green","pseudoBMAplus" = "blue","stacking"="purple","WAIC"="yellow","logL"="turquoise","TRUE"="red")) +
 
@@ -576,12 +585,17 @@ plotPosterior <- function(posterior_draws, type = c("trend","credibility interva
                 data_p <- data.frame(timeElapsed = elapsed_time, 
                                     lb = credibility_intervals[[weights[w]]][1,p,],
                                     effect =credibility_intervals[[weights[w]]][2,p,],
-                                    ub = credibility_intervals[[weights[w]]][3,p,])
+                                   # mean = posterior_mean[[weights[w]]][p,],
+                                    ub = credibility_intervals[[weights[w]]][3,p,],
+                                    lb_hd = hd_intervals[[weights[w]]][1,p,],
+                                    ub_hd = hd_intervals[[weights[w]]][2,p,])
                 ggplot_obj_loc <- ggplot(data_p, aes(x=timeElapsed, y=ub)) + 
                 geom_line(aes(y = lb), colour="transparent") + 
                 geom_line(aes(y = ub), colour="transparent") +
                 geom_ribbon(data=subset(data_p, 0 <= timeElapsed & timeElapsed <= max(elapsed_time)), aes(ymin=lb,ymax=ub), fill="purple", alpha=0.2) +
+                geom_ribbon(data=subset(data_p, 0 <= timeElapsed & timeElapsed <= max(elapsed_time)), aes(ymin=lb_hd,ymax=ub_hd), fill="cadetblue1", alpha=0.2) +
                 geom_line(aes(y = effect),size=0.5, linetype = "longdash",colour="purple") +
+                #geom_line(aes(y = mean),size=0.5, linetype = "longdash",colour="blue") +
                 ggtitle(paste("Trend of",stats_names[p],"(",weights[w],")",sep=" ")) +
                 xlab(expression(gamma)) + 
                 ylab(expression(beta)) +
@@ -589,11 +603,13 @@ plotPosterior <- function(posterior_draws, type = c("trend","credibility interva
                 theme(axis.text=element_text(size=12),axis.title = element_text(size=12),
                           title=element_text(size=12,face="italic")) +theme(legend.position = "none") #+
                 # command to check scale_fill_manual(values=c(clear,blue)) +
-                if(stats_names[p]%in%names(true_effects$exo_effects)){ 
-                    ggplot_obj_loc <- ggplot_obj_loc + geom_hline(aes_string(yintercept = true_effects$exo_effects[[stats_names[p]]],color = "TRUE"),size = 0.5)
+                if(!is.null(true_effects)){
+                    if(stats_names[p]%in%names(true_effects$exo_effects)){ 
+                        ggplot_obj_loc <- ggplot_obj_loc + geom_hline(aes_string(yintercept = true_effects$exo_effects[[stats_names[p]]],color = "TRUE"),size = 0.5)
+                        }
+                    else{
+                        ggplot_obj_loc <- ggplot_obj_loc + stat_function(fun=vdecay, args=list(type = true_effects$endo_effects[[stats_names[p]]]$decay_type, pars = true_effects$endo_effects[[stats_names[p]]]$pars), geom="line", size=0.5, aes(color="TRUE"),linetype="dashed")
                     }
-                else{
-                    ggplot_obj_loc <- ggplot_obj_loc + stat_function(fun=vdecay, args=list(type = true_effects$endo_effects[[stats_names[p]]]$decay_type, pars = true_effects$endo_effects[[stats_names[p]]]$pars), geom="line", size=0.5, aes(color="TRUE"),linetype="dashed")
                 }
                 out[[stats_names[p]]][[weights[w]]] <- ggplot_obj_loc
                 rm(ggplot_obj_loc)
@@ -990,3 +1006,189 @@ DoAnalysis <- function(env = NULL ,
 
 }
 
+
+#' getMLEreh
+#'
+#' A function which returns estimates 
+#'
+#' @param edgelist edgelist to use for the estimation
+#' @param exo_stats matrix of exogenous statistics
+#' @param par_vec vector of values for the halflife/tmax
+#' @param n_cores number of cores to use in the parallelization
+#'
+#' @return list of two objects: "halflife" containing vectors with parameters estimates give by exponential decay (halflife); "tmax", like "halflife"but assuming a one step decay.
+#'
+#' @export
+getMLEreh <- function(edgelist,exo_stats,par_vec,n_cores){
+
+    # pre-processing edgelist with remify::reh()
+    reh_proc <- remify::reh(edgelist =  edgelist)
+
+    # rearranging exo_stats according to the order of the processed data
+    position_rearranged <- NULL
+    for(i in 1:dim(reh_proc$risksetMatrix)[1]){
+        sender_old <- reh_proc$risksetMatrix[i,1]
+        receiver_old <- reh_proc$risksetMatrix[i,2]
+        type_old <- reh_proc$risksetMatrix[i,3]
+        
+        dict_loc <- attr(reh_proc,"dictionary")
+        sender_new <- as.numeric(dict_loc$actors$actorName[which(dict_loc$actors$actorID == sender_old)])+1
+        receiver_new <- as.numeric(dict_loc$actors$actorName[which(dict_loc$actors$actorID == receiver_old)])+1
+        type_new <- as.numeric(dict_loc$types$typeName[which(dict_loc$types$typeID == type_old)])+1
+        position_new <- reh_proc$risksetCube[sender_new,receiver_new,type_new]+1
+        position_rearranged <- c(position_rearranged,position_new)
+    }
+    exo_stats_rearranged <- exo_stats[position_rearranged,] # re-ordering
+    rm(position_rearranged)
+
+    # creating array of statistics 
+    array_exo <- array(NA,dim=c(reh_proc$M,reh_proc$D,dim(exo_stats_rearranged)[2])) #empty array for exogenous statistics
+    for(p in 1:dim(exo_stats_rearranged)[2]){
+        array_exo[,,p] <- matrix(rep(exo_stats_rearranged[,p],reh_proc$M),reh_proc$M,reh_proc$D,byrow=TRUE)
+    }
+
+    #creating list of endo_memory_pars
+    endo_memory_pars_tmax <- endo_memory_pars_halflife <- list()
+    #Inertia (SndSnd)
+    endo_memory_pars_tmax$SndSnd <- list(decay_type = "tmax",pars=cbind(par_vec[1]))
+    endo_memory_pars_halflife$SndSnd <- list(decay_type = "halflife",pars=cbind(par_vec[1]))
+    #Transitivity Closure (TClosure)
+    endo_memory_pars_tmax$TClosure <- list(decay_type = "tmax",pars=cbind(par_vec[1]))
+    endo_memory_pars_halflife$TClosure <- list(decay_type = "halflife",pars=cbind(par_vec[1]))
+    #Participation shift (PShift ABAY)
+    endo_memory_pars_tmax$PShift <- list(ttype = "ABAY",pars=cbind(par_vec[1]))
+    endo_memory_pars_halflife$PShift <- list(ttype = "ABAY",pars=cbind(par_vec[1]))
+    #Reciprocity (RecSnd)
+    endo_memory_pars_tmax$RecSnd <- list(decay_type = "tmax",pars=cbind(par_vec[1]))
+    endo_memory_pars_halflife$RecSnd <- list(decay_type = "halflife",pars=cbind(par_vec[1]))
+
+    # TMAX
+    out_tmax <- list()
+    out_tmax$mles_tmax <- matrix(NA,nrow=length(par_vec),ncol=8) 
+    colnames(out_tmax$mles_tmax) <- c("intercept","dyadic1","dyadic2","inertia","tclosure","pshift.ABAY","reciprocity","nloglik")
+    out_tmax$gradient_tmax <- array(NA,dim=c(7,1,length(par_vec)))
+    out_tmax$hessian_tmax <- array(NA,dim=c(7,7,length(par_vec)))
+    out_tmax$iteration_tmax <- numeric(length(par_vec))
+    out_tmax$converged_tmax <- logical(length(par_vec))
+    for(j in 1:length(par_vec)){
+
+        for(l in 1:length(endo_memory_pars_tmax)) {endo_memory_pars_tmax[[l]]$pars <- cbind(par_vec[j])}
+        endo_stats <- bremory::getSmoothEndoEffects(reh = reh_proc,endo_effects = names(endo_memory_pars_tmax), endo_memory_pars = endo_memory_pars_tmax, n_cores = n_cores)
+        stats <- abind(array_exo,endo_stats,along=3)
+        mles_loc <- remstimate::remstimate(reh =  reh_proc,stats = stats,method = "MLE") # estimating
+
+        # saving results
+        out_tmax$mles_tmax[j,c(1:7)] <- mles_loc$argument
+        out_tmax$mles_tmax[j,8] <- mles_loc$value
+        out_tmax$hessian_tmax[,,j] <- mles_loc$hessian
+        out_tmax$gradient_tmax[,,j] <- mles_loc$gradient
+        out_tmax$iteration_tmax[j] <- mles_loc$iterations
+        out_tmax$converged_tmax[j] <- mles_loc$converged
+        
+        cat("tmax ",j,"\n")
+        # removing local objects
+        rm(endo_stats,stats,mles_loc)
+    }
+
+    # HALFLIFE
+    out_halflife <- list()
+    out_halflife$mles_halflife <- matrix(NA,nrow=length(par_vec),ncol=8) 
+    colnames(out_halflife$mles_halflife) <- c("intercept","dyadic1","dyadic2","inertia","tclosure","pshift.ABAY","reciprocity","nloglik")
+    out_halflife$gradient_halflife <- array(NA,dim=c(7,1,length(par_vec)))
+    out_halflife$hessian_halflife <- array(NA,dim=c(7,7,length(par_vec)))
+    out_halflife$iteration_halflife <- numeric(length(par_vec))
+    out_halflife$converged_halflife <- logical(length(par_vec))
+    for(j in 1:length(par_vec)){
+
+        for(l in 1:length(endo_memory_pars_halflife)) {endo_memory_pars_halflife[[l]]$pars <- cbind(par_vec[j])}
+        endo_stats <- bremory::getSmoothEndoEffects(reh = reh_proc,endo_effects = names(endo_memory_pars_halflife), endo_memory_pars = endo_memory_pars_halflife, n_cores = n_cores)
+        stats <- abind(array_exo,endo_stats,along=3)
+        mles_loc <- remstimate::remstimate(reh =  reh_proc,stats = stats,method = "MLE") # estimating
+
+        # saving results
+        out_halflife$mles_halflife[j,c(1:7)] <- mles_loc$argument
+        out_halflife$mles_halflife[j,8] <- mles_loc$value
+        out_halflife$hessian_halflife[,,j] <- mles_loc$hessian
+        out_halflife$gradient_halflife[,,j] <- mles_loc$gradient
+        out_halflife$iteration_halflife[j] <- mles_loc$iterations
+        out_halflife$converged_halflife[j] <- mles_loc$converged
+        
+        cat("haflife ",j,"\n")
+        # removing local objects
+        rm(endo_stats,stats,mles_loc)
+    }
+    
+    out <- list()
+    out$tmax <- out_tmax
+    out$halflife <- out_halflife
+
+    return(out)
+
+}
+
+
+
+#' getMLEsims
+#'
+#' A function which runs simulations
+#'
+#' @param list_edgelist  list of edgelists to use for the estimation
+#' @param exo_stats matrix of exogenous statistics
+#' @param par_vec vector of values for the halflife/tmax
+#' @param n_cores number of cores to use in the parallelization
+#' @param file_name string with name to use for the partial savings
+#'
+#' @return list of two objects: "halflife" containing vectors with parameters estimates give by exponential decay (halflife); "tmax", like "halflife"but assuming a one step decay.
+#'
+#' @export
+getMLEsims <- function(list_edgelist,exo_stats,par_vec,n_cores,file_name){
+
+    out_tmax <- out_halflife <- list()
+    out_tmax$mles_tmax <- out_halflife$mles_halflife <- array(NA,dim=c(length(par_vec),8,length(list_edgelist))) # 8 because : [intercept,dyadic1,dyadic2,inertia,tclosure,pshift,reciprocity,nloglik]
+    out_tmax$gradient_tmax <- out_halflife$gradient_halflife <- list()
+    out_tmax$hessian_tmax <- out_halflife$hessian_halflife <- list()
+    out_tmax$iteration_tmax <- out_halflife$iteration_halflife <- matrix(NA,nrow=length(par_vec),ncol=length(list_edgelist))
+    out_tmax$converged_tmax <- out_halflife$converged_halflife <- matrix(NA,nrow=length(par_vec),ncol=length(list_edgelist))
+    for(i in 1:length(list_edgelist)){
+        sim_loc <- getMLEreh(edgelist = list_edgelist[[i]], exo_stats = exo_stats, par_vec = par_vec, n_cores = n_cores)
+
+        out_tmax$mles_tmax[,,i] <- sim_loc$tmax$mles_tmax
+        out_halflife$mles_halflife[,,i] <- sim_loc$halflife$mles_halflife
+
+        out_tmax$gradient_tmax[[i]] <- sim_loc$tmax$gradient_tmax
+        out_halflife$gradient_halflife[[i]] <- sim_loc$halflife$gradient_halflife
+
+        out_tmax$hessian_tmax[[i]] <- sim_loc$tmax$hessian_tmax
+        out_halflife$hessian_halflife[[i]] <- sim_loc$halflife$hessian_halflife
+
+        out_tmax$iteration_tmax[,i] <- sim_loc$tmax$iteration_tmax
+        out_halflife$iteration_halflife[,i] <- sim_loc$halflife$iteration_halflife
+
+        out_tmax$converged_tmax[,i] <- sim_loc$tmax$converged_tmax
+        out_halflife$converged_halflife[,i] <- sim_loc$halflife$converged_halflife
+
+        rm(sim_loc)
+        # printing progress
+        cat("Iteration ",i," Finished.\n")
+        # saving partial results
+        if(i%%2==0){
+                cat('\n ... Saving partial results ... \n')
+                out_partial <- list()
+                out_partial$tmax <- out_tmax
+                out_partial$halflife <- out_halflife
+                save(out_partial, file = paste(file_name,".RData",sep=""))
+                rm(out_partial)
+            }
+    }
+
+    # preparing output
+    out <- list()
+    out$tmax <- out_tmax
+    out$halflife <- out_halflife
+
+    # overwriting partial results
+    save(out, file = paste(file_name,".RData",sep=""))
+
+    return(out)
+
+}

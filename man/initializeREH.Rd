@@ -4,7 +4,13 @@
 \alias{initializeREH}
 \title{initializeREH (preprocessing raw data in a suitable format to the 'bremory' package, I used this as starting function for the reh() in remstimate)}
 \usage{
-initializeREH(edgelist, riskset = NULL, directed = TRUE, env = globalenv())
+initializeREH(
+  edgelist,
+  riskset = NULL,
+  directed = TRUE,
+  weights = NULL,
+  env = globalenv()
+)
 }
 \arguments{
 \item{edgelist}{a matrix of dimensions (number of events * 3). By column (time,sender,receiver) of relational events. The first column is the time: if the timing is "ordinal" then a vector of increasing integer (from 1 to the number of events) is provided. Sender and receivers can be provided as either char or integer type.}

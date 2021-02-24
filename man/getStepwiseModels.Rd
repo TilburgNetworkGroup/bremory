@@ -7,14 +7,20 @@
 getStepwiseModels(
   env = globalenv(),
   effects = NULL,
-  K_range = c(2:6),
+  K = c(2:6),
   max_width = NULL,
-  nsim_per_K = 200,
+  min_diff = NULL,
+  nsim_per_K = 101,
   L = NULL,
   A_SAP = 1,
   file_name = "simulation_0",
   WAIC = TRUE,
-  n_cores = 10
+  n_cores = 10,
+  first_event = NULL,
+  last_event = NULL,
+  widths_input = NULL,
+  K_input = NULL,
+  interval_type_input = NULL
 )
 }
 \arguments{
@@ -22,9 +28,11 @@ getStepwiseModels(
 
 \item{effects}{list of two objects: effects$endogenous is a vector of strings with specified the effects of interest; effects$exogenous is an array [M*dyads*exogenous_effects]}
 
-\item{K_range}{range as to the number of intervals that are going to be generated.}
+\item{K}{range as to the number of intervals that are going to be generated.}
 
 \item{max_width}{maximum for width}
+
+\item{min_diff}{minimum width (diff will be changed with width)}
 
 \item{nsim_per_K}{how many simulations per number of intervals}
 
@@ -37,6 +45,16 @@ getStepwiseModels(
 \item{WAIC}{default is TRUE and is needed where WAIC weights have to be estimated}
 
 \item{n_cores}{number of threads to create}
+
+\item{first_event}{integer indicating the event at which start the event sequence and statistic in the estimation stage}
+
+\item{last_event}{integer indicating the event at which stop the event sequence and statistic in the estimation stage}
+
+\item{widths_input}{matirx of sequences of widths from the user}
+
+\item{K_input}{vector of number of steps per each sequence of widths from the user}
+
+\item{interval_type_input}{vector of interval types per each sequence of widths from the user}
 }
 \value{
 the function doesn't return any output but updates objects inside the environment 'stepwiseModelsREH'

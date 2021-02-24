@@ -11,7 +11,7 @@ statisticsREH(env = globalenv(), effects = NULL, K_range = c(2:6))
 
 \item{effects}{list of two objects: effects$endogenous is a vector of strings with specified the effects of interest; effects$exogenous is an array [M*dyads*exogenous_effects]}
 
-\item{K_range}{range as to the number of intervals that are going to be generated.}
+\item{K_range}{range as to the number of intervals that are going to be generated (argument NO MORE USED)}
 }
 \value{
 size of the specified environment.

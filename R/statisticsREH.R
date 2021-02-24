@@ -4,7 +4,7 @@
 #'
 #' @param env environment where the user is currently working
 #' @param effects list of two objects: effects$endogenous is a vector of strings with specified the effects of interest; effects$exogenous is an array [M*dyads*exogenous_effects]
-#' @param K_range range as to the number of intervals that are going to be generated.
+#' @param K_range range as to the number of intervals that are going to be generated (argument NO MORE USED)
 #'
 #' @return  size of the specified environment.
 #'
@@ -43,7 +43,11 @@ statisticsREH <- function(env = globalenv(), effects = NULL, K_range = c(2:6)){
                                                             N = env$initializeREH$N,
                                                             edgelist = env$initializeREH$edgelist,
                                                             riskset_matrix = env$initializeREH$riskset_matrix)
-
+    if(!is.null(env$initializeREH$weights))
+    {
+        weights_loc <- matrix(rep(env$initializeREH$weights,env$initializeREH$n_dyads), nrow = env$initializeREH$M,ncol = env$initializeREH$n_dyads)
+        env$statisticsREH$binaryREH$dyadicREH <- weights_loc*env$statisticsREH$binaryREH$dyadicREH
+    }
     # create names for endongenous and exogenous variables (maybe useful for a new arrangement of mles and vcov betas output)
     #rep_names <- rep(c(effects$endogenous), each =  max(K_range))
     #rep_int_index <- rep(1:max(K_range),times = env$statisticsREH$P)
