@@ -2,7 +2,7 @@
 % Please edit documentation in R/convertEdgelist.R
 \name{convertEdgelist}
 \alias{convertEdgelist}
-\title{convertEdgelist (edgelist)}
+\title{convertEdgelist (edgelist) to be coded in Rcpp only for rem = TRUE and remember that the output indices must go from 1 to D (0 must not be as idyad index)}
 \usage{
 convertEdgelist(edgelist, riskset, actors, rem = FALSE)
 }

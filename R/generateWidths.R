@@ -2,7 +2,6 @@
 #'
 #' A function which return an array with all the statistics, both exogenous and endogenous.
 #'
-#' @param env environment where the user is currently working
 #' @param K intervals dimensions
 #' @param nsim_per_K number of simulations per K
 #' @param max_width maximum time length
@@ -11,13 +10,13 @@
 #'
 #' @return  the function updates the object width in the getStepwiseModels environment.
 #' @export
-generateWidths <- function(env =  globalenv(), K = NULL, nsim_per_K = 2e02, max_width = NULL, min_diff = NULL, intervals = c("all", "increasing", "decreasing","equal")){
+generateWidths <- function(K = NULL, nsim_per_K = 2e02, max_width = NULL, min_diff = NULL, intervals = c("all", "increasing", "decreasing","equal")){
 
-
+    K_input <- K
     if(intervals == "all"){
 
-        nsim <- (nsim_per_K-1)/2 # old division with equal-ish intervals /3
-        env$stepwiseModelsREH$widths <- matrix(NA, nrow = nsim_per_K*length(K), ncol = (max(K)+1) )
+        nsim <- (nsim_per_K-1)/2 
+        widths_matrix <- matrix(NA, nrow = nsim_per_K*length(K), ncol = (max(K)+1) )
         widths_type <- NULL
         iter_K <- 1
         for(K in min(K):max(K)){
@@ -45,13 +44,12 @@ generateWidths <- function(env =  globalenv(), K = NULL, nsim_per_K = 2e02, max_
             matrix_loc[c((nsim+2):((nsim*2)+1)),] <- widths_decr
             
             # ...(3) store widths
-            env$stepwiseModelsREH$widths[c((1+nsim_per_K*(iter_K-1)):(iter_K*nsim_per_K)),c(1:(K+1))] <- matrix_loc
+            widths_matrix[c((1+nsim_per_K*(iter_K-1)):(iter_K*nsim_per_K)),c(1:(K+1))] <- matrix_loc
             widths_type <- c(widths_type,c("equal",rep("increasing",nsim),rep("decreasing",nsim))) #,rep("equal",nsim)
             iter_K <- iter_K + 1
 
         }
-        
-    
+        return(list(widths=widths_matrix,K=rep(K_input,each=nsim_per_K),type = widths_type))
     }
 
     if(intervals == "increasing"){

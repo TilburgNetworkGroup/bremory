@@ -1,4 +1,4 @@
-#' convertEdgelist (edgelist) 
+#' convertEdgelist (edgelist) to be coded in Rcpp only for rem = TRUE and remember that the output indices must go from 1 to D (0 must not be as idyad index)
 #'
 #' A function which return the dimension of a specific environment. [remove export]
 #' @param edgelist matrix of dimensions M*3  (by row[])

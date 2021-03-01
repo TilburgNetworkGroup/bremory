@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getRiskset_old}
 \alias{getRiskset_old}
-\title{getRiskset_old (obtain permutations of actors' id). (will become getRisksetMatrix) [[ TO REMOVE ]]}
+\title{getRiskset_old (obtain permutations of actors' id). (will become getRisksetMatrix)}
 \usage{
 getRiskset_old(actors_id, N, selfedges)
 }
@@ -17,5 +17,5 @@ getRiskset_old(actors_id, N, selfedges)
 matrix of possible dyadic events.
 }
 \description{
-getRiskset_old (obtain permutations of actors' id). (will become getRisksetMatrix) [[ TO REMOVE ]]
+getRiskset_old (obtain permutations of actors' id). (will become getRisksetMatrix)
 }

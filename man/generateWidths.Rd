@@ -5,7 +5,6 @@
 \title{generateWidths}
 \usage{
 generateWidths(
-  env = globalenv(),
   K = NULL,
   nsim_per_K = 200,
   max_width = NULL,
@@ -14,8 +13,6 @@ generateWidths(
 )
 }
 \arguments{
-\item{env}{environment where the user is currently working}
-
 \item{K}{intervals dimensions}
 
 \item{nsim_per_K}{number of simulations per K}

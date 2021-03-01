@@ -4,12 +4,12 @@
 \alias{getSmoothEndoEffects}
 \title{getSmoothEndoEffects}
 \usage{
-getSmoothEndoEffects(reh, endo_effects, endo_memory_pars, n_cores)
+getSmoothEndoEffects(reh, endo_effects, endo_memory_pars, n_threads)
 }
 \arguments{
 \item{endo_effects}{string vector indicating the endogenous effects}
 
-\item{n_cores}{number of corse to be used in the parallelization}
+\item{n_threads}{number of corse to be used in the parallelization}
 
 \item{env}{environment where the user is currently working (usually the global one which can be accessed via 'globalenv()' function or '.GlobalEnv' object)}
 

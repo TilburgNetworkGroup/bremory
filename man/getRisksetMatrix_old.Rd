@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getRisksetMatrix_old}
 \alias{getRisksetMatrix_old}
-\title{getRisksetMatrix_old (will become getRisksetCube) [[ TO REMOVE ]]}
+\title{getRisksetMatrix_old}
 \usage{
 getRisksetMatrix_old(riskset, N)
 }
@@ -15,5 +15,5 @@ getRisksetMatrix_old(riskset, N)
 matrix of possible dyadic events arranged in a square matrx (cell value is the row index of the riskset matrix input, which will be the same to the column index in binary REH).
 }
 \description{
-getRisksetMatrix_old (will become getRisksetCube) [[ TO REMOVE ]]
+getRisksetMatrix_old
 }
