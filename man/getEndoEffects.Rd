@@ -4,10 +4,33 @@
 \alias{getEndoEffects}
 \title{getEndoEffects}
 \usage{
-getEndoEffects(env)
+getEndoEffects(
+  env,
+  M,
+  D,
+  time,
+  edgelist,
+  risksetMatrix,
+  risksetCube0,
+  n_threads
+)
 }
 \arguments{
 \item{env}{environment where the user is currently working (usually the global one which can be accessed via 'globalenv()' function or '.GlobalEnv' object)}
+
+\item{M}{number of events}
+
+\item{D}{number of dyads}
+
+\item{time}{vector of time points}
+
+\item{edgelist}{matrix of [time,actor1,actor2,type,weigth]}
+
+\item{risksetMatrix}{risksetMatrix object inside 'reh' object}
+
+\item{risksetCube0}{risksetCube[,,1] object inside 'reh' object. We only consider one event type for now}
+
+\item{n_threads}{number of threads to create in case of parallelization}
 }
 \value{
 array of Statistics specified in the

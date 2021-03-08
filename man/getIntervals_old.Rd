@@ -4,12 +4,10 @@
 \alias{getIntervals_old}
 \title{getIntervals_old}
 \usage{
-getIntervals_old(env, widths)
+getIntervals_old(env)
 }
 \arguments{
 \item{env}{is the global environment}
-
-\item{widths}{time lengths of intervals as to the stepwise model}
 }
 \value{
 matrix.

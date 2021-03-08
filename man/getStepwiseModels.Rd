@@ -5,7 +5,6 @@
 \title{getStepwiseModels}
 \usage{
 getStepwiseModels(
-  env = globalenv(),
   reh = NULL,
   effects = NULL,
   K = c(2:6),
@@ -15,17 +14,17 @@ getStepwiseModels(
   L = NULL,
   A_SAP = 1,
   file_name = "simulation_0",
+  ELPD = FALSE,
   WAIC = TRUE,
-  n_threads = 10,
+  n_threads = parallel::detectCores() - 2,
   first_event = NULL,
   last_event = NULL,
   interval_input = NULL,
+  env = globalenv(),
   ...
 )
 }
 \arguments{
-\item{env}{environment where the user is currently working}
-
 \item{reh}{either a 'reh' object (see remify::reh() function) or the edgelist}
 
 \item{effects}{list of two objects: effects$endogenous is a vector of strings with specified the effects of interest; effects$exogenous is an array [M*dyads*exogenous_effects]}
@@ -44,6 +43,8 @@ getStepwiseModels(
 
 \item{file_name}{a string indicating the name of the file .RData that will save results each 20 models.}
 
+\item{ELPD}{default is FALSE and is TRUE if ELPD-LFO has to be calculated (PSIS approximation is used [ref. to literature] for one-step-ahead predictions). This procedure might slow down the algorithm.}
+
 \item{WAIC}{default is TRUE and is needed where WAIC weights have to be estimated}
 
 \item{n_threads}{number of threads to create}
@@ -53,6 +54,8 @@ getStepwiseModels(
 \item{last_event}{integer indicating the event at which stop the event sequence and statistic in the estimation stage}
 
 \item{interval_input}{object "stepwise intervals" with widths, K and types}
+
+\item{env}{environment where the user is currently working}
 }
 \value{
 the function doesn't return any output but updates objects inside the environment 'stepwiseModelsREH'

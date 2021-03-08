@@ -120,20 +120,19 @@ arma::mat getBinaryREH_old(arma::uword M,
 //' given vectors of widths and time, the function returns.
 //'
 //' @param env  is the global environment
-//' @param widths time lengths of intervals as to the stepwise model
 //'
 //' @return matrix.
 //'
 //' @export
 // [[Rcpp::export]]
-void getIntervals_old(Rcpp::Environment env,
-                       arma::vec widths)
+void getIntervals_old(Rcpp::Environment env)
 {
     Rcpp::Environment initializeREH = env["initializeREH"];
-    Rcpp::Environment statisticsREH = env["statisticsREH"];
+    Rcpp::Environment statisticsREH = env["statisticsREHOLD"];
     arma::vec time = initializeREH["t"];
     arma::uword M = initializeREH["M"];
     arma::uword K_q = statisticsREH["K_q"];
+    arma::vec widths = statisticsREH["widths_q"];
     arma::uword i,k;
     // creating an empty matrix of (-1) (allocating memory)
     arma::mat intervals_backward(M*K_q, 3);

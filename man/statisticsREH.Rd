@@ -4,14 +4,14 @@
 \alias{statisticsREH}
 \title{statisticsREH}
 \usage{
-statisticsREH(env = globalenv(), effects = NULL, K_range = c(2:6))
+statisticsREH(reh = NULL, effects = NULL, env = globalenv())
 }
 \arguments{
-\item{env}{environment where the user is currently working (it will become and  reh object and env will be set as last input because it is still important since statisticsREH is an environment)}
+\item{reh}{'reh' object}
 
-\item{effects}{list of two objects: effects$endogenous is a vector of strings with specified the effects of interest; effects$exogenous is an array [M*dyads*exogenous_effects]}
+\item{effects}{list of two objects: effects$endogenous is a vector of strings with specified the effects of interest; effects$exogenous is a matrix [dyads*exogenous_effects]}
 
-\item{K_range}{range as to the number of intervals that are going to be generated (argument NO MORE USED)}
+\item{env}{environment where the user is currently working}
 }
 \value{
 size of the specified environment.

@@ -20,14 +20,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// convertToReleventEdgelist
+Rcpp::DataFrame convertToReleventEdgelist(Rcpp::List reh, arma::cube risksetCube);
+RcppExport SEXP _bremory_convertToReleventEdgelist(SEXP rehSEXP, SEXP risksetCubeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type reh(rehSEXP);
+    Rcpp::traits::input_parameter< arma::cube >::type risksetCube(risksetCubeSEXP);
+    rcpp_result_gen = Rcpp::wrap(convertToReleventEdgelist(reh, risksetCube));
+    return rcpp_result_gen;
+END_RCPP
+}
 // getIntervals
-void getIntervals(Rcpp::Environment env, arma::vec widths);
-RcppExport SEXP _bremory_getIntervals(SEXP envSEXP, SEXP widthsSEXP) {
+void getIntervals(Rcpp::Environment env, arma::vec widths, arma::vec time, arma::uword M, arma::uword K_q);
+RcppExport SEXP _bremory_getIntervals(SEXP envSEXP, SEXP widthsSEXP, SEXP timeSEXP, SEXP MSEXP, SEXP K_qSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::Environment >::type env(envSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type widths(widthsSEXP);
-    getIntervals(env, widths);
+    Rcpp::traits::input_parameter< arma::vec >::type time(timeSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type M(MSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type K_q(K_qSEXP);
+    getIntervals(env, widths, time, M, K_q);
     return R_NilValue;
 END_RCPP
 }
@@ -57,13 +72,20 @@ BEGIN_RCPP
 END_RCPP
 }
 // getEndoEffects
-arma::cube getEndoEffects(Rcpp::Environment env);
-RcppExport SEXP _bremory_getEndoEffects(SEXP envSEXP) {
+arma::cube getEndoEffects(Rcpp::Environment env, arma::uword M, arma::uword D, arma::vec time, arma::mat edgelist, arma::umat risksetMatrix, arma::umat risksetCube0, arma::uword n_threads);
+RcppExport SEXP _bremory_getEndoEffects(SEXP envSEXP, SEXP MSEXP, SEXP DSEXP, SEXP timeSEXP, SEXP edgelistSEXP, SEXP risksetMatrixSEXP, SEXP risksetCube0SEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::Environment >::type env(envSEXP);
-    rcpp_result_gen = Rcpp::wrap(getEndoEffects(env));
+    Rcpp::traits::input_parameter< arma::uword >::type M(MSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type D(DSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type time(timeSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type edgelist(edgelistSEXP);
+    Rcpp::traits::input_parameter< arma::umat >::type risksetMatrix(risksetMatrixSEXP);
+    Rcpp::traits::input_parameter< arma::umat >::type risksetCube0(risksetCube0SEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(getEndoEffects(env, M, D, time, edgelist, risksetMatrix, risksetCube0, n_threads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -264,13 +286,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // getIntervals_old
-void getIntervals_old(Rcpp::Environment env, arma::vec widths);
-RcppExport SEXP _bremory_getIntervals_old(SEXP envSEXP, SEXP widthsSEXP) {
+void getIntervals_old(Rcpp::Environment env);
+RcppExport SEXP _bremory_getIntervals_old(SEXP envSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::Environment >::type env(envSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type widths(widthsSEXP);
-    getIntervals_old(env, widths);
+    getIntervals_old(env);
     return R_NilValue;
 END_RCPP
 }
@@ -519,10 +540,11 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_bremory_getBinaryREH", (DL_FUNC) &_bremory_getBinaryREH, 4},
-    {"_bremory_getIntervals", (DL_FUNC) &_bremory_getIntervals, 2},
+    {"_bremory_convertToReleventEdgelist", (DL_FUNC) &_bremory_convertToReleventEdgelist, 2},
+    {"_bremory_getIntervals", (DL_FUNC) &_bremory_getIntervals, 5},
     {"_bremory_getCountsOMP", (DL_FUNC) &_bremory_getCountsOMP, 3},
     {"_bremory_getCountsIndex", (DL_FUNC) &_bremory_getCountsIndex, 2},
-    {"_bremory_getEndoEffects", (DL_FUNC) &_bremory_getEndoEffects, 1},
+    {"_bremory_getEndoEffects", (DL_FUNC) &_bremory_getEndoEffects, 8},
     {"_bremory_getEndoEffects_old", (DL_FUNC) &_bremory_getEndoEffects_old, 1},
     {"_bremory_getSmoothEndoEffects", (DL_FUNC) &_bremory_getSmoothEndoEffects, 4},
     {"_bremory_lpd", (DL_FUNC) &_bremory_lpd, 4},
@@ -537,7 +559,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bremory_getRiskset_old", (DL_FUNC) &_bremory_getRiskset_old, 3},
     {"_bremory_getRisksetMatrix_old", (DL_FUNC) &_bremory_getRisksetMatrix_old, 2},
     {"_bremory_getBinaryREH_old", (DL_FUNC) &_bremory_getBinaryREH_old, 4},
-    {"_bremory_getIntervals_old", (DL_FUNC) &_bremory_getIntervals_old, 2},
+    {"_bremory_getIntervals_old", (DL_FUNC) &_bremory_getIntervals_old, 1},
     {"_bremory_getCountsOMP_old", (DL_FUNC) &_bremory_getCountsOMP_old, 3},
     {"_bremory_getCountsIndex_old", (DL_FUNC) &_bremory_getCountsIndex_old, 2},
     {"_bremory_lpd_old", (DL_FUNC) &_bremory_lpd_old, 4},

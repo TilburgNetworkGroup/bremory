@@ -4,12 +4,18 @@
 \alias{getIntervals}
 \title{getIntervals}
 \usage{
-getIntervals(env, widths)
+getIntervals(env, widths, time, M, K_q)
 }
 \arguments{
 \item{env}{is the global environment}
 
 \item{widths}{time lengths of intervals as to the stepwise model}
+
+\item{time}{vector of time points}
+
+\item{M}{number of events}
+
+\item{K_q}{number of steps for the q-th model}
 }
 \value{
 matrix.

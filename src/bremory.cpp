@@ -53,6 +53,42 @@ arma::mat getBinaryREH(arma::uword M,
 }
 
 
+//' convertToReleventEdgelist()
+//'
+//'
+//' @param edgelist input edgelist from 'reh' object
+//' @param risksetCube cube with dyad column position
+//'
+//' @return data.frame
+//'
+//' @export
+// [[Rcpp::export]]
+Rcpp::DataFrame convertToReleventEdgelist(Rcpp::List reh, arma::cube risksetCube)
+{
+    arma::uword m;
+    Rcpp::DataFrame edgelist = Rcpp::as<Rcpp::DataFrame>(reh["edgelist"]);
+    arma::vec intereventTime = Rcpp::as<arma::vec>(reh["intereventTime"]);
+    arma::uword M = edgelist.nrows();
+
+    arma::vec time = arma::cumsum(intereventTime);
+    arma::uvec actor1 = edgelist["actor1"];
+    arma::uvec actor2 = edgelist["actor2"];
+    arma::uvec type = edgelist["type"];
+    arma::uvec dyad(M);
+
+
+    for(m = 0; m < M; m++)
+        {
+            arma::uword actor1_m = actor1(m);
+            arma::uword actor2_m = actor2(m);
+            arma::uword type_m = type(m);
+            dyad(m) = risksetCube(actor1_m,actor2_m,type_m)+1;
+        }
+    Rcpp::DataFrame out = Rcpp::DataFrame::create(Rcpp::Named("dyad") = dyad, Rcpp::Named("time") = time);
+    return out;
+}
+
+
 //  END Preprocessing functions //
 
 //  BEGIN Statistics functions //
@@ -63,23 +99,26 @@ arma::mat getBinaryREH(arma::uword M,
 //'
 //' @param env  is the global environment
 //' @param widths time lengths of intervals as to the stepwise model
+//' @param time vector of time points
+//' @param M number of events
+//' @param K_q number of steps for the q-th model
 //'
 //' @return matrix.
 //'
 //' @export
 // [[Rcpp::export]]
 void getIntervals(Rcpp::Environment env,
-                       arma::vec widths)
+                       arma::vec widths, 
+                       arma::vec time, 
+                       arma::uword M, 
+                       arma::uword K_q)
 {
-    Rcpp::Environment initializeREH = env["initializeREH"];
     Rcpp::Environment statisticsREH = env["statisticsREH"];
-    arma::vec time = initializeREH["t"];
-    arma::uword M = initializeREH["M"];
-    arma::uword K_q = statisticsREH["K_q"];
     arma::uword i,k;
+
     // creating an empty matrix of (-1) (allocating memory)
-    arma::mat intervals_backward(M*K_q, 3);
-    intervals_backward.fill(-1);   
+    arma::mat intervals(M*K_q, 3);
+    intervals.fill(-1);   
 
     // begin for loop
     for (i = 1; i < M; i++) 
@@ -115,15 +154,14 @@ void getIntervals(Rcpp::Environment env,
 
                 if(bounds_intervals(0) <= bounds_intervals(1))
                 {
-                intervals_backward(k+i*K_q,arma::span(0,1)) = bounds_intervals.t();
+                intervals(k+i*K_q,arma::span(0,1)) = bounds_intervals.t();
                 }
             }
 
         }
     }
-    statisticsREH.assign("intervals_backward",intervals_backward);
+    statisticsREH.assign("intervals",intervals);
 }
-
 
 //' getCountsOMP
 //'
@@ -189,35 +227,42 @@ arma::vec getCountsIndex(arma::mat intervals, arma::mat counts)
 //' getEndoEffects
 //'
 //' @param env environment where the user is currently working (usually the global one which can be accessed via 'globalenv()' function or '.GlobalEnv' object)
+//' @param M number of events
+//' @param D number of dyads
+//' @param time vector of time points
+//' @param edgelist matrix of [time,actor1,actor2,type,weigth]
+//' @param risksetMatrix risksetMatrix object inside 'reh' object
+//' @param risksetCube0 risksetCube[,,1] object inside 'reh' object. We only consider one event type for now
+//' @param n_threads number of threads to create in case of parallelization
 //'
 //' @return array of Statistics specified in the
 //'
 //' @export
 // [[Rcpp::export]]
-arma::cube getEndoEffects(Rcpp::Environment env)
+arma::cube getEndoEffects(Rcpp::Environment env, 
+                            arma::uword M, 
+                            arma::uword D, 
+                            arma::vec time, 
+                            arma::mat edgelist, 
+                            arma::umat risksetMatrix, 
+                            arma::umat risksetCube0,
+                            arma::uword n_threads)
 {
-    Rcpp::Environment initializeREH = env["initializeREH"];
     Rcpp::Environment statisticsREH = env["statisticsREH"];
-    Rcpp::Environment counts = statisticsREH["counts"];
-    arma::uword M = initializeREH["M"];
+    arma::mat counts = statisticsREH["counts"];
+
     arma::uword K_q = statisticsREH["K_q"];
     arma::uword P = statisticsREH["P"];
     arma::uword p,k;
-    arma::uword n_dyads = initializeREH["n_dyads"];
-    arma::uword n_threads = initializeREH["n_threads"];
-    arma::vec t = initializeREH["t"];
     std::vector<std::string> endo_effects = statisticsREH["endo_effects"];
-    arma::mat edgelist = initializeREH["edgelist"];
-    arma::umat riskset = initializeREH["riskset"];
-    arma::umat riskset_matrix = initializeREH["riskset_matrix"]; // i should re-arrange the riskset in a matrix (senderxreceiver and the cell has to give the column index in the statistics matrix)
-    arma::mat intervals_backward = statisticsREH["intervals_backward"];
+    arma::mat intervals = statisticsREH["intervals"];
 
     // allocating memory for the output array
-    arma::cube stats_array(M,n_dyads,P*K_q); 
+    arma::cube stats_array(M,D,P*K_q); 
 
     for(p = 0; p < P; p++){
         for(k = 0; k < K_q; k++){
-            arma::mat out = computeEffect(endo_effects[p], counts, intervals_backward, edgelist, riskset, riskset_matrix, t, M, k, K_q, n_threads);
+            arma::mat out = computeEffect(endo_effects[p], counts, intervals, edgelist, risksetMatrix, risksetCube0, time, M, k, K_q, n_threads);
             stats_array.slice((p*K_q)+k) = out;
         }
     }
@@ -236,8 +281,9 @@ arma::cube getEndoEffects(Rcpp::Environment env)
 arma::cube getEndoEffects_old(Rcpp::Environment env)
 {
     Rcpp::Environment initializeREH = env["initializeREH"];
-    Rcpp::Environment statisticsREH = env["statisticsREH"];
+    Rcpp::Environment statisticsREH = env["statisticsREHOLD"];
     Rcpp::Environment counts = statisticsREH["counts"];
+    arma::mat dyadicREH = counts["dyadicREH"];
     arma::uword M = initializeREH["M"];
     arma::uword K_q = statisticsREH["K_q"];
     arma::uword P = statisticsREH["P"];
@@ -256,7 +302,7 @@ arma::cube getEndoEffects_old(Rcpp::Environment env)
 
     for(p = 0; p < P; p++){
         for(k = 0; k < K_q; k++){
-            arma::mat out = computeEffect(endo_effects[p], counts, intervals_backward, edgelist, riskset, riskset_matrix, t, M, k, K_q, n_cores);
+            arma::mat out = computeEffect(endo_effects[p], dyadicREH, intervals_backward, edgelist, riskset, riskset_matrix, t, M, k, K_q, n_cores);
             stats_array.slice((p*K_q)+k) = out;
         }
     }

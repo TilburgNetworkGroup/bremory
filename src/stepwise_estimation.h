@@ -19,7 +19,7 @@
 
 
 // SndSnd
-arma::mat SndSnd(Rcpp::Environment counts,
+arma::mat SndSnd(arma::mat counts,
                  arma::mat intervals_backward,
                  arma::mat edgelist,
                  arma::umat riskset, 
@@ -31,18 +31,17 @@ arma::mat SndSnd(Rcpp::Environment counts,
                  arma::uword n_cores)
     {   
         arma::uword m;
-        arma::mat dyadicREH = counts["dyadicREH"];
-        arma::mat out(M, dyadicREH.n_cols-2, arma::fill::zeros);
+        arma::mat out(M, counts.n_cols-2, arma::fill::zeros);
         
         for(m = 1; m < M; m++){ 
           arma::uword lb_ub_row = intervals_backward(((K_q*m)+k),2);
-          out.row(m) = dyadicREH(lb_ub_row,arma::span(2,dyadicREH.n_cols-1)); //((K_q*m)+k)
+          out.row(m) = counts(lb_ub_row,arma::span(2,counts.n_cols-1)); //((K_q*m)+k)
         }
         return out;
     }
 
 // RecSnd
-arma::mat RecSnd(Rcpp::Environment counts,
+arma::mat RecSnd(arma::mat counts,
                  arma::mat intervals_backward,
                  arma::mat edgelist,
                  arma::umat riskset,
@@ -55,8 +54,7 @@ arma::mat RecSnd(Rcpp::Environment counts,
     {
         arma::uword i,j,m; 
         arma::uword N = riskset_matrix.n_cols;
-        arma::mat dyadicREH = counts["dyadicREH"];
-        arma::mat out(M, dyadicREH.n_cols-2, arma::fill::zeros);
+        arma::mat out(M, counts.n_cols-2, arma::fill::zeros);
         
         for(m = 1; m < M; m++){
             arma::uword lb_ub_row = intervals_backward(((K_q*m)+k),2);
@@ -65,7 +63,7 @@ arma::mat RecSnd(Rcpp::Environment counts,
                     if(i!=j){
                         arma::uword column_out = riskset_matrix(i,j);
                         arma::uword column_in = riskset_matrix(j,i)+2; // because the first two columns in counts are lower and upper bound of the corresponding interval
-                        out(m,column_out) = dyadicREH(lb_ub_row,column_in);
+                        out(m,column_out) = counts(lb_ub_row,column_in);
                     }
                 }
             }
@@ -75,7 +73,7 @@ arma::mat RecSnd(Rcpp::Environment counts,
 
 
 // IDSnd
-arma::mat IDSnd(Rcpp::Environment counts,
+arma::mat IDSnd(arma::mat counts,
                 arma::mat intervals_backward,
                 arma::mat edgelist, 
                 arma::umat riskset,
@@ -88,8 +86,7 @@ arma::mat IDSnd(Rcpp::Environment counts,
     {
         arma::uword i,j,m,n; 
         arma::uword N = riskset_matrix.n_cols;
-        arma::mat dyadicREH = counts["dyadicREH"];
-        arma::mat out(M, dyadicREH.n_cols-2, arma::fill::zeros);
+        arma::mat out(M, counts.n_cols-2, arma::fill::zeros);
         for(m = 1; m < M; m++){
             arma::uword lb_ub_row = intervals_backward(((K_q*m)+k),2);
             for(n = 0; n < N; n++){
@@ -98,7 +95,7 @@ arma::mat IDSnd(Rcpp::Environment counts,
                 double IDsender_value = 0;
                 for(i = 0; i < N; i++){
                     if(i!=n){
-                        IDsender_value += dyadicREH(lb_ub_row,IDsender_in(i));
+                        IDsender_value += counts(lb_ub_row,IDsender_in(i));
                     }
                 }
                 arma::urowvec IDsender_ou = riskset_matrix.row(n); // we don't sum +2 here because the output matrix has no (lower,upper) bounds as first two columns
@@ -113,7 +110,7 @@ arma::mat IDSnd(Rcpp::Environment counts,
     }
 
 // IDRec
-arma::mat IDRec(Rcpp::Environment counts, 
+arma::mat IDRec(arma::mat counts, 
                 arma::mat intervals_backward,
                 arma::mat edgelist, 
                 arma::umat riskset,
@@ -126,8 +123,7 @@ arma::mat IDRec(Rcpp::Environment counts,
     {
         arma::uword i,j,m,n; 
         arma::uword N = riskset_matrix.n_cols;
-        arma::mat dyadicREH = counts["dyadicREH"];
-        arma::mat out(M, dyadicREH.n_cols-2, arma::fill::zeros);
+        arma::mat out(M, counts.n_cols-2, arma::fill::zeros);
         for(m = 1; m < M; m++){
             arma::uword lb_ub_row = intervals_backward(((K_q*m)+k),2);
             for(n = 0; n < N; n++){
@@ -136,7 +132,7 @@ arma::mat IDRec(Rcpp::Environment counts,
                 double IDreceiver_value = 0;
                 for(i = 0; i < N; i++){
                     if(i!=n){
-                        IDreceiver_value += dyadicREH(lb_ub_row,IDreceiver_in(i));
+                        IDreceiver_value += counts(lb_ub_row,IDreceiver_in(i));
                     }
                 }
                 arma::uvec IDreceiver_ou = riskset_matrix.col(n); // we don't sum +2 here because the output matrix has no (lower,upper) bounds as first two columns
@@ -151,7 +147,7 @@ arma::mat IDRec(Rcpp::Environment counts,
     }
 
 // ODSnd
-arma::mat ODSnd(Rcpp::Environment counts, 
+arma::mat ODSnd(arma::mat counts, 
                 arma::mat intervals_backward,
                 arma::mat edgelist,
                 arma::umat riskset, 
@@ -164,8 +160,7 @@ arma::mat ODSnd(Rcpp::Environment counts,
     {
         arma::uword i,j,m,n; 
         arma::uword N = riskset_matrix.n_cols;
-        arma::mat dyadicREH = counts["dyadicREH"];
-        arma::mat out(M, dyadicREH.n_cols-2, arma::fill::zeros);
+        arma::mat out(M, counts.n_cols-2, arma::fill::zeros);
         for(m = 1; m < M; m++){
             arma::uword lb_ub_row = intervals_backward(((K_q*m)+k),2);
             for(n = 0; n < N; n++){
@@ -174,7 +169,7 @@ arma::mat ODSnd(Rcpp::Environment counts,
                 double ODsender_value = 0;
                 for(i = 0; i < N; i++){
                     if(i!=n){
-                        ODsender_value += dyadicREH(lb_ub_row,ODsender_in(i));
+                        ODsender_value += counts(lb_ub_row,ODsender_in(i));
                     }
                 }
                 arma::urowvec ODsender_ou = riskset_matrix.row(n); // we don't sum +2 here because the output matrix has no (lower,upper) bounds as first two columns
@@ -189,7 +184,7 @@ arma::mat ODSnd(Rcpp::Environment counts,
     }
 
 // ODRec
-arma::mat ODRec(Rcpp::Environment counts, 
+arma::mat ODRec(arma::mat counts, 
                 arma::mat intervals_backward,
                 arma::mat edgelist, 
                 arma::umat riskset,
@@ -202,8 +197,7 @@ arma::mat ODRec(Rcpp::Environment counts,
     {
         arma::uword i,j,m,n; 
         arma::uword N = riskset_matrix.n_cols;
-        arma::mat dyadicREH = counts["dyadicREH"];
-        arma::mat out(M, dyadicREH.n_cols-2, arma::fill::zeros);
+        arma::mat out(M, counts.n_cols-2, arma::fill::zeros);
         for(m = 1; m < M; m++){
             arma::uword lb_ub_row = intervals_backward(((K_q*m)+k),2);
             for(n = 0; n < N; n++){
@@ -212,7 +206,7 @@ arma::mat ODRec(Rcpp::Environment counts,
                 double ODreceiver_value = 0;
                 for(i = 0; i < N; i++){
                     if(i!=n){
-                        ODreceiver_value += dyadicREH(lb_ub_row,ODreceiver_in(i));
+                        ODreceiver_value += counts(lb_ub_row,ODreceiver_in(i));
                     }
                 }
                 arma::uvec ODreceiver_ou = riskset_matrix.col(n); // we don't sum +2 here because the output matrix has no (lower,upper) bounds as first two columns
@@ -228,7 +222,7 @@ arma::mat ODRec(Rcpp::Environment counts,
 
 
 // TClosure (Transivity Closure)
-arma::mat TClosure(Rcpp::Environment counts, 
+arma::mat TClosure(arma::mat counts, 
                    arma::mat intervals_backward,
                    arma::mat edgelist,
                    arma::umat riskset,
@@ -314,7 +308,7 @@ arma::mat TClosure(Rcpp::Environment counts,
     }
 
 // CClosure (Cyclic Closure)
-arma::mat CClosure (Rcpp::Environment counts, 
+arma::mat CClosure (arma::mat counts, 
                    arma::mat intervals_backward,
                    arma::mat edgelist, 
                    arma::umat riskset,
@@ -330,7 +324,6 @@ arma::mat CClosure (Rcpp::Environment counts,
     int lb_ub_row, lb_row, ub_row, m_loc, lb_ub_l_s;
     double CClosure_value_s_r;
     arma::uvec indices(2);
-    arma::mat dyadicREH = counts["dyadicREH"];
     arma::mat out(M, riskset.n_rows, arma::fill::zeros);
 
 
@@ -348,12 +341,12 @@ arma::mat CClosure (Rcpp::Environment counts,
 
     omp_set_dynamic(0);         // disabling dynamic teams
     omp_set_num_threads(n_cores); // number of threads for all consecutive parallel regions
-    #pragma omp parallel for private(i,m,lb_ub_row,lb_row,ub_row,s,r,column_out,indices,CClosure_value_s_r,l,l_s_loc,r_l_loc,h,m_loc,lb_ub_l_s) shared(M,out,k,K_q,dyadicREH,intervals_backward,riskset_matrix,collapsed_loops)
+    #pragma omp parallel for private(i,m,lb_ub_row,lb_row,ub_row,s,r,column_out,indices,CClosure_value_s_r,l,l_s_loc,r_l_loc,h,m_loc,lb_ub_l_s) shared(M,out,k,K_q,counts,intervals_backward,riskset_matrix,collapsed_loops)
         for(i = 0; i < collapsed_loops.n_rows; i++){
             m = collapsed_loops(i,0);
             lb_ub_row = intervals_backward(((K_q*m)+k),2);
-            lb_row = dyadicREH(lb_ub_row,0);
-            ub_row = dyadicREH(lb_ub_row,1);
+            lb_row = counts(lb_ub_row,0);
+            ub_row = counts(lb_ub_row,1);
             s = collapsed_loops(i,1);
             r = collapsed_loops(i,2);
             column_out = collapsed_loops(i,3);
@@ -374,13 +367,13 @@ arma::mat CClosure (Rcpp::Environment counts,
                 l_s_loc = l_s(l);
                 r_l_loc = r_l(l);
                 // backward seeking
-                if(dyadicREH(lb_ub_row,(l_s_loc+2)) > 0){
-                    arma::vec l_s_binary = dyadicREH(arma::span(lb_row,ub_row),l_s_loc+2);
+                if(counts(lb_ub_row,(l_s_loc+2)) > 0){
+                    arma::vec l_s_binary = counts(arma::span(lb_row,ub_row),l_s_loc+2);
                     arma::uvec l_s_ones = arma::find(l_s_binary == 1);
                     for(h = 0; h < l_s_ones.n_elem; h++){
-                        m_loc = dyadicREH(lb_ub_row,0) + l_s_ones(h);
+                        m_loc = counts(lb_ub_row,0) + l_s_ones(h);
                         lb_ub_l_s = intervals_backward(((K_q*m_loc)+k),2);
-                        if(dyadicREH(lb_ub_l_s,(r_l_loc+2)) > 0){
+                        if(counts(lb_ub_l_s,(r_l_loc+2)) > 0){
                             CClosure_value_s_r += 1;
                         }
                        }
@@ -391,7 +384,7 @@ arma::mat CClosure (Rcpp::Environment counts,
         return out;
     }
 // Mapping participation shifts functions to strings (which will be written as input in the .R function)
-std::unordered_map<std::string, std::function<arma::mat(Rcpp::Environment, arma::mat, arma::mat, arma::umat, arma::umat, arma::vec, arma::uword, arma::uword, arma::uword, arma::uword)>>  endogenousMap =
+std::unordered_map<std::string, std::function<arma::mat(arma::mat, arma::mat, arma::mat, arma::umat, arma::umat, arma::vec, arma::uword, arma::uword, arma::uword, arma::uword)>>  endogenousMap =
         {
             {"SndSnd", SndSnd},
             {"RecSnd", RecSnd},
@@ -406,7 +399,7 @@ std::unordered_map<std::string, std::function<arma::mat(Rcpp::Environment, arma:
 
 // computeEffect (internal routine function)
 arma::mat computeEffect(std::string effect,
-                        Rcpp::Environment counts, 
+                        arma::mat counts, 
                         arma::mat intervals_backward,
                         arma::mat edgelist, 
                         arma::umat riskset,

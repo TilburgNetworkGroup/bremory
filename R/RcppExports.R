@@ -16,18 +16,34 @@ getBinaryREH <- function(M, N, edgelist, riskset_matrix) {
     .Call('_bremory_getBinaryREH', PACKAGE = 'bremory', M, N, edgelist, riskset_matrix)
 }
 
+#' convertToReleventEdgelist()
+#'
+#'
+#' @param edgelist input edgelist from 'reh' object
+#' @param risksetCube cube with dyad column position
+#'
+#' @return data.frame
+#'
+#' @export
+convertToReleventEdgelist <- function(reh, risksetCube) {
+    .Call('_bremory_convertToReleventEdgelist', PACKAGE = 'bremory', reh, risksetCube)
+}
+
 #' getIntervals
 #'
 #' given vectors of widths and time, the function returns.
 #'
 #' @param env  is the global environment
 #' @param widths time lengths of intervals as to the stepwise model
+#' @param time vector of time points
+#' @param M number of events
+#' @param K_q number of steps for the q-th model
 #'
 #' @return matrix.
 #'
 #' @export
-getIntervals <- function(env, widths) {
-    invisible(.Call('_bremory_getIntervals', PACKAGE = 'bremory', env, widths))
+getIntervals <- function(env, widths, time, M, K_q) {
+    invisible(.Call('_bremory_getIntervals', PACKAGE = 'bremory', env, widths, time, M, K_q))
 }
 
 #' getCountsOMP
@@ -58,12 +74,19 @@ getCountsIndex <- function(intervals, counts) {
 #' getEndoEffects
 #'
 #' @param env environment where the user is currently working (usually the global one which can be accessed via 'globalenv()' function or '.GlobalEnv' object)
+#' @param M number of events
+#' @param D number of dyads
+#' @param time vector of time points
+#' @param edgelist matrix of [time,actor1,actor2,type,weigth]
+#' @param risksetMatrix risksetMatrix object inside 'reh' object
+#' @param risksetCube0 risksetCube[,,1] object inside 'reh' object. We only consider one event type for now
+#' @param n_threads number of threads to create in case of parallelization
 #'
 #' @return array of Statistics specified in the
 #'
 #' @export
-getEndoEffects <- function(env) {
-    .Call('_bremory_getEndoEffects', PACKAGE = 'bremory', env)
+getEndoEffects <- function(env, M, D, time, edgelist, risksetMatrix, risksetCube0, n_threads) {
+    .Call('_bremory_getEndoEffects', PACKAGE = 'bremory', env, M, D, time, edgelist, risksetMatrix, risksetCube0, n_threads)
 }
 
 #' getEndoEffects_old
@@ -276,13 +299,12 @@ getBinaryREH_old <- function(M, N, edgelist, riskset_matrix) {
 #' given vectors of widths and time, the function returns.
 #'
 #' @param env  is the global environment
-#' @param widths time lengths of intervals as to the stepwise model
 #'
 #' @return matrix.
 #'
 #' @export
-getIntervals_old <- function(env, widths) {
-    invisible(.Call('_bremory_getIntervals_old', PACKAGE = 'bremory', env, widths))
+getIntervals_old <- function(env) {
+    invisible(.Call('_bremory_getIntervals_old', PACKAGE = 'bremory', env))
 }
 
 #' getCountsOMP_old

@@ -3,6 +3,7 @@
 export(DoAnalysis)
 export(PSIS_LFO_CV_1_SAP)
 export(convertEdgelist)
+export(convertToReleventEdgelist)
 export(decay)
 export(drawFromPosterior)
 export(generateWidths)

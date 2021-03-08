@@ -24,7 +24,7 @@ initializeREH <- function(edgelist,
         env$initializeREH$M <- dim(edgelist)[1]
 
  
-        env$initializeREH$actors <- data.frame(actors = env$initializeREH$actors, integer_id = c(0:(env$initializeREH$N-1)))
+        env$initializeREH$actors <- data.frame(actors = sort(env$initializeREH$actors), integer_id = c(0:(env$initializeREH$N-1)))
         env$initializeREH$riskset <- if(is.null(riskset)){matrix(na.omit(getRiskset_old(actors_id = env$initializeREH$actors$integer_id, N = env$initializeREH$N, selfedges = FALSE)),ncol=2)}
                        else{riskset}
 

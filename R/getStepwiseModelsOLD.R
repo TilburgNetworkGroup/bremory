@@ -67,6 +67,8 @@ getStepwiseModelsOLD <- function(env = globalenv(),
       max_width <- max(na.omit(as.vector(env$stepwiseModelsREH$widths)))
     }
 
+    env$stepwiseModelsREH$widths_rejected <- env$stepwiseModelsREH$K_rejected <- env$stepwiseModelsREH$type_rejected <- NULL
+
     env$stepwiseModelsREH$first_event <- first_event
     env$stepwiseModelsREH$last_event <- last_event
 
@@ -182,12 +184,19 @@ getStepwiseModelsOLD <- function(env = globalenv(),
         #}
         model_status <- FALSE
         while(!model_status){
+
+        if(is.null(widths_input)){
           env$statisticsREHOLD$widths_q <-  generateWidths(K= env$stepwiseModelsREH$K[q],
                                                       min_diff = min_diff,
                                                       max_width= max_width,
                                                       intervals= env$stepwiseModelsREH$interval_type[q]) #na.omit(env$stepwiseModelsREH$widths[q,])
           env$stepwiseModelsREH$widths[q,1:(env$stepwiseModelsREH$K[q]+1)] <- env$statisticsREHOLD$widths_q
           env$statisticsREHOLD$K_q <- env$stepwiseModelsREH$K[q] 
+        }
+        else{
+          env$statisticsREHOLD$widths_q <-  env$stepwiseModelsREH$widths[q,1:(env$stepwiseModelsREH$K[q]+1)]
+          env$statisticsREHOLD$K_q <- env$stepwiseModelsREH$K[q] 
+        }
 
           
           start <- Sys.time() 
@@ -220,7 +229,8 @@ getStepwiseModelsOLD <- function(env = globalenv(),
           #getCountsOMP (OpenMP parallelization in C++)
           if(length(env$statisticsREHOLD$endo_effects)>0){
             # getIntervals() will find per each time point the lower and the upper bound for each interval and will automatically assign it to the object 'intervals_backwards'
-            getIntervals_old(env = globalenv(), widths = env$statisticsREHOLD$widths_q) 
+            getIntervals_old(env = globalenv()) 
+
             #env$statisticsREHOLD$intervals_backward[(env$statisticsREHOLD$K_q+1),1:2] <- c(0,0) #only for the first interval at the second time point
             intervals_loc <- unique(env$statisticsREHOLD$intervals_backward[,1:2])
 
@@ -268,10 +278,10 @@ getStepwiseModelsOLD <- function(env = globalenv(),
               Sigma <- tryCatch(as.matrix(solve(model_loc$hessian)), 
                                         error = function(error_message) {matrix(-1,nrow=dim(stats_rem)[3],ncol=dim(stats_rem)[3])})
             if((isSymmetric(model_loc$hessian) & (Sigma[1,1] != (-1)) )){
-              if(isSymmetric(as.matrix(solve(model_loc$hessian))))
-                {
+             ###-### if(isSymmetric(as.matrix(solve(model_loc$hessian))))
+               ###-### {
                     model_status <- TRUE
-                }
+               ###-### }
                             
             }
           }
@@ -295,7 +305,7 @@ getStepwiseModelsOLD <- function(env = globalenv(),
               interevent_time <- diff(c(0,env$initializeREH$t))[time_points]  
               stats_waic <- aperm(stats, perm = c(2,3,1))  
               events <- env$statisticsREHOLD$binaryREH$dyadicREH[time_points,]                     
-              if((Sigma[1,1] != (-1)) & isSymmetric(Sigma)){
+              if((Sigma[1,1] != (-1)) ){###-### & isSymmetric(Sigma)
                 post_pars <- t(mvtnorm::rmvnorm(n = env$stepwiseModelsREH$n_sims_is, mean = model_loc$coef, sigma = Sigma)) # dim = [pars x n_sim_is]
 
                 #lpd <- matrix(NA,nrow=env$stepwiseModelsREH$n_sims_is,ncol=length(time_points))
@@ -383,6 +393,7 @@ getStepwiseModelsOLD <- function(env = globalenv(),
             env$stepwiseModelsREH$widths_rejected <-  rbind(env$stepwiseModelsREH$widths_rejected, env$statisticsREHOLD$widths_q) # widths_rejected
             env$stepwiseModelsREH$K_rejected <-  c(env$stepwiseModelsREH$K_rejected, env$statisticsREHOLD$K_q) # K_rejected
             env$stepwiseModelsREH$type_rejected <-  c(env$stepwiseModelsREH$type_rejected, env$stepwiseModelsREH$interval_type[q]) # type_rejected
+            print("rejected")
             q_rej <- q_rej + 1
           }
 
@@ -400,145 +411,3 @@ getStepwiseModelsOLD <- function(env = globalenv(),
 
     rm(statisticsREHOLD, envir = env)
 }
-
-
-#' PSIS_LFO_CV_1_SAP
-#'
-#' A function which run th PSIS with LFO CV by using 1-Step-Ahead-Predictions 
-#'
-#' @param n_dyads ...
-#' @param eventlist ...
-#' @param statslist ...
-#' @param t ...
-#' @param first_event ...
-#' @param last_event ...
-#' @param L ...
-#' @param n_sim_is ...
-#' @param tau ...
-#' @param cores ...
-
-#'
-#' @return  the function doesn't return any output but updates objects inside the environment 'stepwiseModelsREH'
-#' 
-#' @export
-PSIS_LFO_CV_1_SAP <- function(n_dyads,eventlist,statslist,t,first_event,last_event,L,n_sim_is,tau,cores)
-{
-  J_i <- L+1 # set of time points contributing in the calculation of the importance ratios. 
-  time_points <- ((L+1):last_event) 
-  
-  log_p_J_i <- matrix(NA, nrow = length(time_points), ncol = n_sim_is)
-
-  # output list objects
-  elpd_lfo <- rep(NA,length(time_points))
-  count_no_estimation <- 0 # know how many times the model is estimated considering a larger subset than the previous step
-  k_vec <- NULL
-  
-  supplist_L <- list() 
-  supplist_L[[1]]<-matrix(TRUE, length(first_event:L), n_dyads)
-
-  # helper functions taken from the tutorial: https://mc-stan.org/loo/articles/loo2-lfo.html
-  # more stable than log(sum(exp(x))) 
-  log_sum_exp <- function(x) {
-    max_x <- max(x)  
-    max_x + log(sum(exp(x - max_x)))
-  }
-
-  # more stable than log(mean(exp(x)))
-  log_mean_exp <- function(x) {
-    log_sum_exp(x) - log(length(x))
-  }
-
-  # estimate the model subsetting in 1:L (first L events)
-  #### relevent::rem ####  
-  model_subset <- relevent::rem(eventlist = eventlist[first_event:L,],
-                                statslist = statslist[first_event:L,,],
-                                supplist = supplist_L,
-                                timing = "interval",
-                                estimator = "MLE")
-                               
-  #### relevent::rem ####
-
-  # store MLEs and standard errors
-  mle_subset <- model_subset$coef
-  vcov_subset <- tryCatch(as.matrix(solve(model_subset$hessian)),
-                            error = function(error_message) {matrix(-1,nrow=dim(statslist)[2],ncol=dim(statslist)[2])})                  
-  if(vcov_subset[1,1] != (-1)){
-    #draw a sample from a multivariate normal distribution (approximation of the posterior distribution)
-    pars_draws <- t(mvtnorm::rmvnorm(n = n_sim_is, mean = mle_subset, sigma = vcov_subset)) # dim = [pars x n_sim_is]
-
-    # first step ahead (L+1) is predicted with the exact LFO
-    event <- numeric(n_dyads)
-    event[eventlist[time_points[1],1]] <- 1
-    log_p_J_i[1,] <- logpJi(pars = pars_draws,
-                        stats = statslist[time_points[1],,],
-                        event = event,
-                        interevent_time = t[time_points[1]]-t[time_points[1]-1]) 
-    # exact LFO prediction                                   
-    elpd_lfo[1] <-  log_mean_exp(log_p_J_i[1,]) #log(mean(exp(log_p_J_i[1,]))) 
-
-    i_star <- 1 # everything starts from i = L+1
-    i <- 2
-    # progress bar
-    c('\n Progress of PSIS-LFO-1SAP (latest algorithm')
-    pb <- txtProgressBar(min = 1, max = length(time_points), style = 3)
-    while(i <= length(time_points)) 
-    {
-      J_i <- c(J_i,time_points[i])
-      event <- numeric(n_dyads)
-      event[eventlist[time_points[i],1]] <- 1
-      log_p_J_i[i,] <- logpJi(pars = pars_draws,
-                        stats = statslist[time_points[i],,],
-                        event = event,
-                        interevent_time = t[time_points[i]]-t[time_points[i]-1])    
-
-      log_ratios <- as.vector(apply(rbind(log_p_J_i[i_star:i,]),2,sum))
-
-      psis_smooth <- suppressWarnings(loo::psis(log_ratios = log_ratios, cores = cores))
-      k <- psis_smooth$diag$par   
-      k_vec <- c(k_vec,k)
-      if(k < tau)
-      {   
-        psis_weights <-  weights(psis_smooth, normalize = TRUE)[, 1]
-
-        elpd_lfo[i] <- log_sum_exp(psis_weights + log_p_J_i[i,]) #log(sum(exp(log_p_J_i[i,])*psis_weights))         
-      } else
-      {
-        cat('... reestimating \n')
-        i_star <- i # useful to filter out from log_p_J_i those events that become part of the fitted model
-        J_i <- time_points[i] 
-
-        supplist_L <- list() 
-        supplist_L[[1]] <- matrix(TRUE, length(first_event:(time_points[i]-1)) , n_dyads)
-
-        #re-estimating the model until (time_points[i]-1)
-        #### relevent::rem ####                        
-        model_subset <- relevent::rem(eventlist = eventlist[first_event:(time_points[i]-1),],
-                                      statslist = statslist[first_event:(time_points[i]-1),,],
-                                      supplist = supplist_L,
-                                      timing = "interval",
-                                      estimator = "MLE")
-        #### relevent::rem ####
-
-        mle_subset <- model_subset$coef
-        vcov_subset <- as.matrix(solve(model_subset$hessian))
-        pars_draws <- t(mvtnorm::rmvnorm(n = n_sim_is, mean = mle_subset, sigma = vcov_subset)) # dim = [pars x n_sim_is]
-        
-        # estimating with exact LFO (using the new "pars_draws" matrix)
-        event <- numeric(n_dyads)
-        event[eventlist[time_points[i],1]] <- 1
-        log_p_J_i[i,] <- logpJi(pars = pars_draws,
-                        stats = statslist[time_points[i],,],
-                        event = event,
-                        interevent_time = t[time_points[i]]-t[time_points[i]-1]) 
-        elpd_lfo[i] <- log_mean_exp(log_p_J_i[i,]) #log(mean(exp(log_p_J_i[i,]))) 
-        count_no_estimation <- count_no_estimation + 1                                      
-      }
-      i <- i + 1
-      setTxtProgressBar(pb, i)
-    }
-  }
-  else{cat("PSIS-LFO did not run because of a singular hessian matrix")}
-
-  return(list(elpd_lfo = elpd_lfo, counts = count_no_estimation, k = k_vec))
-}
-
