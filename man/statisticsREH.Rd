@@ -4,9 +4,13 @@
 \alias{statisticsREH}
 \title{statisticsREH}
 \usage{
-statisticsREH(reh = NULL, effects = NULL, env = globalenv())
+statisticsREH(formula, data, reh, effects, env)
 }
 \arguments{
+\item{formula}{formula from getStepwiseModels(...)}
+
+\item{data}{data from getStepwiseModels}
+
 \item{reh}{'reh' object}
 
 \item{effects}{list of two objects: effects$endogenous is a vector of strings with specified the effects of interest; effects$exogenous is a matrix [dyads*exogenous_effects]}

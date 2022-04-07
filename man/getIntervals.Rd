@@ -4,7 +4,7 @@
 \alias{getIntervals}
 \title{getIntervals}
 \usage{
-getIntervals(env, widths, time, M, K_q)
+getIntervals(env, widths, time, M, K_q, nthreads)
 }
 \arguments{
 \item{env}{is the global environment}
@@ -16,6 +16,8 @@ getIntervals(env, widths, time, M, K_q)
 \item{M}{number of events}
 
 \item{K_q}{number of steps for the q-th model}
+
+\item{nthreads}{number of threads}
 }
 \value{
 matrix.

@@ -4,18 +4,16 @@
 \alias{getSmoothEndoEffects}
 \title{getSmoothEndoEffects}
 \usage{
-getSmoothEndoEffects(reh, endo_effects, endo_memory_pars, n_threads)
+getSmoothEndoEffects(reh, endo_effects, endo_memory_pars, nthreads)
 }
 \arguments{
+\item{reh}{"reh" object}
+
 \item{endo_effects}{string vector indicating the endogenous effects}
 
-\item{n_threads}{number of corse to be used in the parallelization}
+\item{endo_memory_pars}{function for the decay of past events influence}
 
-\item{env}{environment where the user is currently working (usually the global one which can be accessed via 'globalenv()' function or '.GlobalEnv' object)}
-
-\item{decay_fun}{function for the decay of past events influence}
-
-\item{pars}{matrix with parameters for the decay_fun}
+\item{nthreads}{number of corse to be used in the parallelization}
 }
 \value{
 array of Statistics specified

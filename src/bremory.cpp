@@ -13,10 +13,63 @@
 #include "stepwise_estimation.h"
 #include "smooth_estimation.h"
 #include "decay_functions.h"
-
-
+#include "smm.h"
+#include "pmm.h"
 
 #define LOG(x) std::cout << x << "\n"
+
+//
+
+//' smmInertia()
+//'
+//'
+//' @param vuoto 
+//' 
+//' @return vuoto
+//'
+//' @export
+// [[Rcpp::export]]
+double smmInertia()
+{
+    bool intervals = true;
+    arma::vec K = {2,3,4,5};
+    double maxWidth = 3.0;
+    return smm::inertia(intervals,K,maxWidth);
+}
+
+//' pmmInertia()
+//'
+//'
+//' @param vuoto 
+//' 
+//' @return vuoto
+//'
+//' @export
+// [[Rcpp::export]]
+double pmmInertia()
+{
+    std::string decay = "exponential";
+    arma::vec pars = {3.0,0.5,1.0};
+    return pmm::inertia(decay,pars);
+}
+
+
+//' pmmDecay()
+//'
+//'
+//' @param vuoto 
+//' 
+//' @return vuoto
+//'
+//' @export
+// [[Rcpp::export]]
+std::vector<std::string> pmmDecay()
+{
+   return pmm::decay;
+}
+
+//
+
 
 //  BEGIN Preprocessing functions //
 
@@ -57,17 +110,17 @@ arma::mat getBinaryREH(arma::uword M,
 //'
 //'
 //' @param edgelist input edgelist from 'reh' object
-//' @param risksetCube cube with dyad column position
 //'
 //' @return data.frame
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame convertToReleventEdgelist(Rcpp::List reh, arma::cube risksetCube)
+Rcpp::DataFrame convertToReleventEdgelist(Rcpp::List reh)
 {
     arma::uword m;
     Rcpp::DataFrame edgelist = Rcpp::as<Rcpp::DataFrame>(reh["edgelist"]);
     arma::vec intereventTime = Rcpp::as<arma::vec>(reh["intereventTime"]);
+    arma::ucube risksetCube = Rcpp::as<arma::ucube>(reh["risksetCube"]);
     arma::uword M = edgelist.nrows();
 
     arma::vec time = arma::cumsum(intereventTime);
@@ -102,6 +155,7 @@ Rcpp::DataFrame convertToReleventEdgelist(Rcpp::List reh, arma::cube risksetCube
 //' @param time vector of time points
 //' @param M number of events
 //' @param K_q number of steps for the q-th model
+//' @param nthreads number of threads
 //'
 //' @return matrix.
 //'
@@ -111,7 +165,8 @@ void getIntervals(Rcpp::Environment env,
                        arma::vec widths, 
                        arma::vec time, 
                        arma::uword M, 
-                       arma::uword K_q)
+                       arma::uword K_q,
+                       int nthreads)
 {
     Rcpp::Environment statisticsREH = env["statisticsREH"];
     arma::uword i,k;
@@ -119,7 +174,10 @@ void getIntervals(Rcpp::Environment env,
     // creating an empty matrix of (-1) (allocating memory)
     arma::mat intervals(M*K_q, 3);
     intervals.fill(-1);   
-
+    	
+    omp_set_dynamic(0);           // disabling dynamic teams
+    omp_set_num_threads(nthreads); // number of threads for all consecutive parallel regions
+    #pragma omp parallel for private(i,k) shared(intervals) 
     // begin for loop
     for (i = 1; i < M; i++) 
     {
@@ -167,13 +225,13 @@ void getIntervals(Rcpp::Environment env,
 //'
 //' @param binaryREH matrix
 //' @param lbs_ubs matrix of lower bounds (lb's, first column) and upper bounds (ub's, second column) of binaryREH
-//' @param n_threads n_threads
+//' @param nthreads nthreads
 //'
 //' @return matrix of accumulated counts within ranges of binaryREH
 //'
 //' @export
 // [[Rcpp::export]]
-arma::mat getCountsOMP(arma::mat binaryREH, arma::mat lbs_ubs, int n_threads)
+arma::mat getCountsOMP(arma::mat binaryREH, arma::mat lbs_ubs, int nthreads)
 {
     arma::uword n_dyads = binaryREH.n_cols;
     arma::uword n_intervals = lbs_ubs.n_rows;
@@ -184,12 +242,13 @@ arma::mat getCountsOMP(arma::mat binaryREH, arma::mat lbs_ubs, int n_threads)
     arma::rowvec count_loc(n_dyads,arma::fill::zeros);
 
     omp_set_dynamic(0);           // disabling dynamic teams
-    omp_set_num_threads(n_threads); // number of threads for all consecutive parallel regions
+    omp_set_num_threads(nthreads); // number of threads for all consecutive parallel regions
     #pragma omp parallel for private(i,count_loc) shared(n_dyads,n_intervals,lbs_ubs,output_counts)
         for(i = 0; i < n_intervals; i++){
             if(lbs_ubs(i,0) != (-1)){
                 if(lbs_ubs(i,0) == lbs_ubs(i,1)){
                     count_loc = binaryREH.row(lbs_ubs(i,0));
+                    
                 }
                 else{
                     count_loc = arma::sum(binaryREH(arma::span(lbs_ubs(i,0),lbs_ubs(i,1)),arma::span::all),0);
@@ -207,15 +266,20 @@ arma::mat getCountsOMP(arma::mat binaryREH, arma::mat lbs_ubs, int n_threads)
 //'
 //' @param intervals matrix of intervals (non-unique intervals, first two columns are lower bound and upper bound respectively)
 //' @param counts matrix of intervals (first two columns are lower bound and upper bound respectively)
+//' @param nthreads number of threads
 //'
 //' @return vector of row indices relative to the matrix 'counts'
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec getCountsIndex(arma::mat intervals, arma::mat counts)
+arma::vec getCountsIndex(arma::mat intervals, arma::mat counts, int nthreads)
 {
     arma::uword i;
     arma::vec counts_index(intervals.n_rows);
+
+    omp_set_dynamic(0);           // disabling dynamic teams
+    omp_set_num_threads(nthreads); // number of threads for all consecutive parallel regions
+    #pragma omp parallel for private(i) shared(counts_index) 
     for(i = 0; i < intervals.n_rows; i++){
         arma::uvec loc_find = arma::intersect(arma::find(counts.col(0)==intervals(i,0)),arma::find(counts.col(1)==intervals(i,1)));
         counts_index[i] = counts(loc_find(0),2);
@@ -233,7 +297,7 @@ arma::vec getCountsIndex(arma::mat intervals, arma::mat counts)
 //' @param edgelist matrix of [time,actor1,actor2,type,weigth]
 //' @param risksetMatrix risksetMatrix object inside 'reh' object
 //' @param risksetCube0 risksetCube[,,1] object inside 'reh' object. We only consider one event type for now
-//' @param n_threads number of threads to create in case of parallelization
+//' @param nthreads number of threads to create in case of parallelization
 //'
 //' @return array of Statistics specified in the
 //'
@@ -246,7 +310,7 @@ arma::cube getEndoEffects(Rcpp::Environment env,
                             arma::mat edgelist, 
                             arma::umat risksetMatrix, 
                             arma::umat risksetCube0,
-                            arma::uword n_threads)
+                            arma::uword nthreads)
 {
     Rcpp::Environment statisticsREH = env["statisticsREH"];
     arma::mat counts = statisticsREH["counts"];
@@ -262,47 +326,7 @@ arma::cube getEndoEffects(Rcpp::Environment env,
 
     for(p = 0; p < P; p++){
         for(k = 0; k < K_q; k++){
-            arma::mat out = computeEffect(endo_effects[p], counts, intervals, edgelist, risksetMatrix, risksetCube0, time, M, k, K_q, n_threads);
-            stats_array.slice((p*K_q)+k) = out;
-        }
-    }
-    
-    return stats_array;
-}
-
-//' getEndoEffects_old
-//'
-//' @param env environment where the user is currently working (usually the global one which can be accessed via 'globalenv()' function or '.GlobalEnv' object)
-//'
-//' @return array of Statistics specified in the
-//'
-//' @export
-// [[Rcpp::export]]
-arma::cube getEndoEffects_old(Rcpp::Environment env)
-{
-    Rcpp::Environment initializeREH = env["initializeREH"];
-    Rcpp::Environment statisticsREH = env["statisticsREHOLD"];
-    Rcpp::Environment counts = statisticsREH["counts"];
-    arma::mat dyadicREH = counts["dyadicREH"];
-    arma::uword M = initializeREH["M"];
-    arma::uword K_q = statisticsREH["K_q"];
-    arma::uword P = statisticsREH["P"];
-    arma::uword p,k;
-    arma::uword n_dyads = initializeREH["n_dyads"];
-    arma::uword n_cores = initializeREH["n_cores"];
-    arma::vec t = initializeREH["t"];
-    std::vector<std::string> endo_effects = statisticsREH["endo_effects"];
-    arma::mat edgelist = initializeREH["edgelist"];
-    arma::umat riskset = initializeREH["riskset"];
-    arma::umat riskset_matrix = initializeREH["riskset_matrix"]; // i should re-arrange the riskset in a matrix (senderxreceiver and the cell has to give the column index in the statistics matrix)
-    arma::mat intervals_backward = statisticsREH["intervals_backward"];
-
-    // allocating memory for the output array
-    arma::cube stats_array(M,n_dyads,P*K_q); 
-
-    for(p = 0; p < P; p++){
-        for(k = 0; k < K_q; k++){
-            arma::mat out = computeEffect(endo_effects[p], dyadicREH, intervals_backward, edgelist, riskset, riskset_matrix, t, M, k, K_q, n_cores);
+            arma::mat out = computeEffect(endo_effects[p], counts, intervals, edgelist, risksetMatrix, risksetCube0, time, M, k, K_q, nthreads);
             stats_array.slice((p*K_q)+k) = out;
         }
     }
@@ -312,17 +336,16 @@ arma::cube getEndoEffects_old(Rcpp::Environment env)
 
 //' getSmoothEndoEffects
 //'
-//' @param env environment where the user is currently working (usually the global one which can be accessed via 'globalenv()' function or '.GlobalEnv' object)
+//' @param reh "reh" object
 //' @param endo_effects string vector indicating the endogenous effects
-//' @param decay_fun function for the decay of past events influence
-//' @param pars matrix with parameters for the decay_fun
-//' @param n_threads number of corse to be used in the parallelization
+//' @param endo_memory_pars function for the decay of past events influence
+//' @param nthreads number of corse to be used in the parallelization
 //'
 //' @return array of Statistics specified 
 //'
 //' @export
 // [[Rcpp::export]]
-arma::cube getSmoothEndoEffects(Rcpp::List reh, std::vector<std::string> endo_effects, Rcpp::List endo_memory_pars, arma::uword n_threads)
+arma::cube getSmoothEndoEffects(Rcpp::List reh, std::vector<std::string> endo_effects, Rcpp::List endo_memory_pars, arma::uword nthreads)
 {   
     arma::uword M = reh["M"];
     arma::uword N = reh["N"];
@@ -350,7 +373,7 @@ arma::cube getSmoothEndoEffects(Rcpp::List reh, std::vector<std::string> endo_ef
     arma::cube stats_array(M,D,P); 
 
     for(p = 0; p < P; p++){
-        arma::mat out = computeSmoothEffect(endo_effects[p], endo_memory_pars[p], edgelist, rehBinary, risksetMatrix, risksetCube, t, M, N, C, D, n_threads);
+        arma::mat out = computeSmoothEffect(endo_effects[p], endo_memory_pars[p], edgelist, rehBinary, risksetMatrix, risksetCube, t, M, N, C, D, nthreads);
         stats_array.slice(p) = out;
         //Rcpp::Rcout << "computation of " << endo_effects[p] << " successfully completed!\n"; // printing out some comments (will be removed)
     }
@@ -392,13 +415,13 @@ double lpd(arma::vec pars, arma::mat stats, arma::uvec event, double interevent_
 //' @param stats is a cube of dimensions n_dyads*variables*M with statistics of interest by column and dyads by row.
 //' @param event_binary is a matrix of ones and zeros of dimensions M*n_dyads : 1 indicating the observed dyad and 0 the non observed dyads.
 //' @param interevent_time the vector of time differences between the current time point and the previous event time.
-//' @param n_threads n_threads
+//' @param nthreads nthreads
 //'
 //' @return log-pointwise density value of a specific time point
 //'
 //' @export
 // [[Rcpp::export]]  
-double nllik(arma::vec pars, arma::cube stats, arma::umat event_binary, arma::vec interevent_time, int n_threads){
+double nllik(arma::vec pars, arma::cube stats, arma::umat event_binary, arma::vec interevent_time, int nthreads){
         arma::uword n_dyads = event_binary.n_cols;
         arma::uword i,m;
         arma::uword M = event_binary.n_rows;
@@ -406,7 +429,7 @@ double nllik(arma::vec pars, arma::cube stats, arma::umat event_binary, arma::ve
         arma::vec llik(M,arma::fill::zeros);
 
         omp_set_dynamic(0);           // disabling dynamic teams
-        omp_set_num_threads(n_threads); // number of threads for all consecutive parallel regions
+        omp_set_num_threads(nthreads); // number of threads for all consecutive parallel regions
         #pragma omp parallel for private(m,i,log_lambda) shared(n_dyads,M,stats,event_binary,interevent_time,llik)
         for(m = 0; m < M; m++)
         {
@@ -435,7 +458,7 @@ double nllik(arma::vec pars, arma::cube stats, arma::umat event_binary, arma::ve
 //' @param stats cube of statistics [D*P*M]
 //' @param event_binary matrix of 1/0
 //' @param interevent_time vector of interevent times
-//' @param n_threads number of cores to be used in the parallelized calculation of the nllik()
+//' @param nthreads number of cores to be used in the parallelized calculation of the nllik()
 //'
 //' @return log-pointwise density value of a specific time point
 //'
@@ -448,7 +471,7 @@ Rcpp::List performBSIR(arma::uword nsim,
                        arma::cube stats,
                        arma::umat event_binary, 
                        arma::vec interevent_time,
-                       arma::uword n_threads){
+                       arma::uword nthreads){
     // (0) create output empty list
     Rcpp::List out = Rcpp::List::create();
     arma::uword i;
@@ -464,7 +487,7 @@ Rcpp::List performBSIR(arma::uword nsim,
     // (2) evaluate the generated value with nnlik and get the density
     for(i = 0; i < nsim; i++){
         arma::vec draw_loc = random_t.row(i).t();
-        density_posterior(i) = nllik(draw_loc,stats,event_binary,interevent_time,n_threads);
+        density_posterior(i) = nllik(draw_loc,stats,event_binary,interevent_time,nthreads);
     }
     out["densities_post"] = density_posterior;
 
@@ -626,10 +649,11 @@ arma::cube getDraws(arma::uvec sample_models,
     //arma::uword K_i; //K-i and related objects should be removed
     arma::uword nsim = sample_models.n_elem;
     // arranging list elements of 'configurations' in vectors, matrices and cube :
-    arma::vec K = input["K"];
-    arma::mat widths = input["widths"];
-    arma::mat mle_betas = input["mle_betas"];
-    arma::cube vcov_betas = input["vcov_betas"];
+    Rcpp::List intervals  = input["intervals"];
+    arma::vec K = intervals["K"];
+    arma::mat widths = intervals["widths"];
+    arma::mat mle_betas = input["coef"];
+    arma::cube vcov_betas = input["vcov"];
 
     // allocating memory (output) :
     arma::mat out_widths(nsim, widths.n_cols, arma::fill::ones);
@@ -668,12 +692,20 @@ arma::cube getDraws(arma::uvec sample_models,
 
 //' tryClone
 //'
-//' @param input data.frame object
+//' @param lambda aa
+//' @param index bb
+//' @param stats_col cc
 //'
 //' @return input [dataframe]
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame tryClone(Rcpp::DataFrame input){
-    return input;
+arma::vec tryClone(arma::vec lambda, arma::uword index, arma::vec stats_col){
+    
+
+    arma::vec out(lambda.n_elem,arma::fill::zeros);
+    for(arma::uword d = 0; d < lambda.n_elem; d++)
+        out += exp(lambda.at(d)) * stats_col;
+    out /= index;
+    return out;
 }

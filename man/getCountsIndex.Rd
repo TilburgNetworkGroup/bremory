@@ -4,12 +4,14 @@
 \alias{getCountsIndex}
 \title{getCountsIndex (function useful for statistics computation)}
 \usage{
-getCountsIndex(intervals, counts)
+getCountsIndex(intervals, counts, nthreads)
 }
 \arguments{
 \item{intervals}{matrix of intervals (non-unique intervals, first two columns are lower bound and upper bound respectively)}
 
 \item{counts}{matrix of intervals (first two columns are lower bound and upper bound respectively)}
+
+\item{nthreads}{number of threads}
 }
 \value{
 vector of row indices relative to the matrix 'counts'

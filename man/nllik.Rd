@@ -4,7 +4,7 @@
 \alias{nllik}
 \title{nllik (negative log-likelihood rem model)}
 \usage{
-nllik(pars, stats, event_binary, interevent_time, n_threads)
+nllik(pars, stats, event_binary, interevent_time, nthreads)
 }
 \arguments{
 \item{pars}{is a vector of parameters (note: the order must be aligned witht the column order in 'stats')}
@@ -15,7 +15,7 @@ nllik(pars, stats, event_binary, interevent_time, n_threads)
 
 \item{interevent_time}{the vector of time differences between the current time point and the previous event time.}
 
-\item{n_threads}{n_threads}
+\item{nthreads}{nthreads}
 }
 \value{
 log-pointwise density value of a specific time point

@@ -53,6 +53,5 @@ std::unordered_map<std::string, std::function<arma::vec(arma::uword,arma::uword,
             {"ABAY", ABAY}
          };
 
-
 #endif
 

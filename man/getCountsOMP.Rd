@@ -4,14 +4,14 @@
 \alias{getCountsOMP}
 \title{getCountsOMP}
 \usage{
-getCountsOMP(binaryREH, lbs_ubs, n_threads)
+getCountsOMP(binaryREH, lbs_ubs, nthreads)
 }
 \arguments{
 \item{binaryREH}{matrix}
 
 \item{lbs_ubs}{matrix of lower bounds (lb's, first column) and upper bounds (ub's, second column) of binaryREH}
 
-\item{n_threads}{n_threads}
+\item{nthreads}{nthreads}
 }
 \value{
 matrix of accumulated counts within ranges of binaryREH

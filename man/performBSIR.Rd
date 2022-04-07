@@ -12,7 +12,7 @@ performBSIR(
   stats,
   event_binary,
   interevent_time,
-  n_threads
+  nthreads
 )
 }
 \arguments{
@@ -30,7 +30,7 @@ performBSIR(
 
 \item{interevent_time}{vector of interevent times}
 
-\item{n_threads}{number of cores to be used in the parallelized calculation of the nllik()}
+\item{nthreads}{number of cores to be used in the parallelized calculation of the nllik()}
 }
 \value{
 log-pointwise density value of a specific time point

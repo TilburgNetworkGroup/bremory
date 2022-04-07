@@ -12,7 +12,7 @@ getEndoEffects(
   edgelist,
   risksetMatrix,
   risksetCube0,
-  n_threads
+  nthreads
 )
 }
 \arguments{
@@ -30,7 +30,7 @@ getEndoEffects(
 
 \item{risksetCube0}{risksetCube[,,1] object inside 'reh' object. We only consider one event type for now}
 
-\item{n_threads}{number of threads to create in case of parallelization}
+\item{nthreads}{number of threads to create in case of parallelization}
 }
 \value{
 array of Statistics specified in the

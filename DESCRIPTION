@@ -3,7 +3,7 @@ Title: What the Package Does (one line, title case)
 Version: 1.0
 Author: Giuseppe Arena
 Description: What the package does (one paragraph).
-Depends: R (>= 3.5.2), Matrix, parallel, relevent, mvtnorm, abind, loo, shiny, shinyjs, shinyWidgets, ggplot2, gridExtra, gtools, RColorBrewer, HDInterval, extraDistr, remify, remstimate
+Depends: R (>= 3.5.2), Matrix, parallel, relevent, mvtnorm, abind, loo, ggplot2, gridExtra, gtools, RColorBrewer, HDInterval, extraDistr, remify, remstimate
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
@@ -15,5 +15,5 @@ LinkingTo:
 Imports:
     Rcpp,
     RcppParallel (>= 4.4.2)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 SystemRequirements: GNU make

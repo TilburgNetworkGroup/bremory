@@ -4,11 +4,9 @@
 \alias{convertToReleventEdgelist}
 \title{convertToReleventEdgelist()}
 \usage{
-convertToReleventEdgelist(reh, risksetCube)
+convertToReleventEdgelist(reh)
 }
 \arguments{
-\item{risksetCube}{cube with dyad column position}
-
 \item{edgelist}{input edgelist from 'reh' object}
 }
 \value{

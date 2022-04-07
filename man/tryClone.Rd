@@ -4,10 +4,14 @@
 \alias{tryClone}
 \title{tryClone}
 \usage{
-tryClone(input)
+tryClone(lambda, index, stats_col)
 }
 \arguments{
-\item{input}{data.frame object}
+\item{lambda}{aa}
+
+\item{index}{bb}
+
+\item{stats_col}{cc}
 }
 \value{
 input [dataframe]
