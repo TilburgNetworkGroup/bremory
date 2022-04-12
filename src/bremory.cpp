@@ -1,6 +1,5 @@
 #include <RcppArmadillo.h>
 #include <Rcpp.h>
-#include <RcppParallel.h>
 #include <RcppDist.h>
 #include <mvt.h>
 #include <iostream>
@@ -75,33 +74,23 @@ std::vector<std::string> pmmDecay()
 
 //' getBinaryREH()
 //'
+//' @param dyad vector of dyad occurred (reh$edgelist[,2])
+//' @param D numbr of possible dyads (reh$D)
 //'
-//' @param M number of relational events observed
-//' @param N number of actors
-//' @param edgelist matrix of (time,sender,receiver)
-//' @param riskset_matrix matrix of possible dyadic events with column_order per each cell (this will be the order in the binaryREH matrices columns)
-//'
-//' @return Matrix with dimensions given by the number of events (by row) and the dimension of the risk set (by column) .
+//' @return matrix with dimensions given by the number of events (by row) and the dimension of the risk set (by column) .
 //'
 //' @export
 // [[Rcpp::export]]
-arma::mat getBinaryREH(arma::uword M,
-                        arma::uword N,
-                        arma::mat edgelist, 
-                        arma::umat riskset_matrix)
+arma::mat getBinaryREH(arma::uvec dyad, arma::uword D)
 {
     arma::uword m;
-    arma::mat out(M,N*(N-1),arma::fill::zeros); 
-    arma::vec edgelist_loc(3,arma::fill::zeros);
-
+    arma::uword M = dyad.n_elem;
+    arma::mat out(M,D,arma::fill::zeros); 
     for(m = 0; m < M; m++)
         {
-            edgelist_loc = edgelist.row(m).t();
-            arma::rowvec out_loc(N*(N-1),arma::fill::zeros);
-            out_loc[riskset_matrix(edgelist_loc(1),edgelist_loc(2))] = 1;
-            out.row(m) = out_loc;
+            arma::uword dyad_m = dyad(m);
+            out(m,dyad_m) = 1;
         }
-  
     return out;
 }
 

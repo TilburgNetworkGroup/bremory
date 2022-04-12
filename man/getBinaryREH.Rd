@@ -4,19 +4,15 @@
 \alias{getBinaryREH}
 \title{getBinaryREH()}
 \usage{
-getBinaryREH(M, N, edgelist, riskset_matrix)
+getBinaryREH(dyad, D)
 }
 \arguments{
-\item{M}{number of relational events observed}
+\item{dyad}{vector of dyad occurred (reh$edgelist[,2])}
 
-\item{N}{number of actors}
-
-\item{edgelist}{matrix of (time,sender,receiver)}
-
-\item{riskset_matrix}{matrix of possible dyadic events with column_order per each cell (this will be the order in the binaryREH matrices columns)}
+\item{D}{numbr of possible dyads (reh$D)}
 }
 \value{
-Matrix with dimensions given by the number of events (by row) and the dimension of the risk set (by column) .
+matrix with dimensions given by the number of events (by row) and the dimension of the risk set (by column) .
 }
 \description{
 getBinaryREH()

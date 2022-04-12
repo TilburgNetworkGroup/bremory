@@ -6,7 +6,7 @@
 #' @param reh either a 'reh' object (see remify::reh() function) or the edgelist
 #' @param effects [working]list of two objects: effects$endogenous is a vector of strings with specified the effects of interest; effects$exogenous is an array [M*dyads*exogenous_effects]
 #' @param data [not working]list of exogenous variables (time varying or not) (this argument is still being coded, please use the argument 'effects')
-#' @param intervals it can be specified in two different ways: (1) as a list of intervals with "widths", "K" and "type"; (2) as list specifying: a vector of integers indicating the number of steps per stepwise model ("K"), the maximum time width for intervals ("maxWidth"), the minimum width for intervals ("minDiff"), the number of simulations per each K ("nsimK"). With the second specification, the function bremory::intervals() will be used.
+#' @param intervals it can be specified in two different ways: (1) as a list of intervals with "widths", "K"; (2) as list specifying: a vector of integers indicating the number of steps per stepwise model ("K"), the maximum time width for intervals ("maxWidth"), the minimum width for intervals ("minDiff"), the number of simulations per each K ("nsimK"). With the second specification, the function bremory::intervals() will be used.
 #' @param WAIC default is TRUE and is needed where WAIC weights have to be estimated
 #' @param ELPD default is FALSE and is TRUE if ELPD-LFO has to be calculated (PSIS approximation is used [ref. to literature] for one-step-ahead predictions). This procedure might slow down the algorithm.
 #' @param firstEvent integer indicating the event at which start the event sequence and statistic in the estimation stage
@@ -47,20 +47,6 @@ smm <- function(formula = NULL,
             }
         }
     }
-
-    ## temporary code before integrating remstimate
-    #reh_remstimate <- reh
-    #reh_remstimate$risksetMatrix <- NULL
-    #reh_remstimate$risksetCube <- NULL
-    #reh_remstimate$rehBinary <- NULL
-    #dyads_vec <- rep(NA,reh$M)
-    #for(m in 1:reh$M){
-    #  dyads_vec[m] <- reh$risksetCube[reh$edgelist[m,2]+1,reh$edgelist[m,3]+1,reh$edgelist[m,4]+1]
-    #}
-    #reh_remstimate$edgelist <- cbind(reh$edgelist[,1],dyads_vec,reh$edgelist[,5])
-    #names(reh_remstimate$edgelist) <- c("time","dyad","weight")
-    #rm(dyads_vec)
-    ## temporary code before integrating remstimate
 
     #### START PARALLELIZATION SETTINGS
     # set Cores for parallelization purpose
@@ -154,17 +140,21 @@ smm <- function(formula = NULL,
     env$stepwiseModels$time_sim$value <- rep(NA,env$stepwiseModels$Q)
     env$stepwiseModels$time_sim$unit <- rep(NA,env$stepwiseModels$Q)
     
+    ### --RELEVENT-- ###
     # this line WILL BE REMOVED 
-    reh$edgelist$time <- cumsum(as.numeric(reh$intereventTime)) # with remstimate::remstimate this column won't be part of the estimation stage, instead the intereventTime will be used. Therefore this line WILL BE REMOVED
+    #reh$edgelist$time <- cumsum(as.numeric(reh$intereventTime)) # with remstimate::remstimate this column won't be part of the estimation stage, instead the intereventTime will be used. Therefore this line WILL BE REMOVED
+    ### --RELEVENT-- ###
 
     # names of endogenous and exogenous statistics (will change with the new data and formula input)
     env$stepwiseModels$stats_names_endo <- env$statisticsREH$endo_effects 
     env$stepwiseModels$stats_names_exo <- dimnames(env$statisticsREH$exogenous_stats)[[3]]
 
+    ### --RELEVENT-- ###
     ## BEGIN rem supplist (will be removed once we integrate 'remstimate')
-    supplist <- list() 
-    supplist[[1]]<-matrix(TRUE, nrow = length(firstEvent:lastEvent), ncol = reh$D)
+    #supplist <- list() 
+    #supplist[[1]]<-matrix(TRUE, nrow = length(firstEvent:lastEvent), ncol = reh$D)
     ## END rem supplist
+    ### --RELEVENT-- ###
 
     # allocating space for each model result (Q models in total)
     env$stepwiseModels$coef  <- matrix(NA, nrow = env$stepwiseModels$Q, ncol = (( max(env$stepwiseModels$intervals$K) * env$statisticsREH$P) + env$statisticsREH$S)) #env$stepwiseModels$coef_remstimate
@@ -237,8 +227,36 @@ smm <- function(formula = NULL,
         env$stepwiseModels$WAIC <- NULL
       }
     }
+
+    # adapted temporarily to the current version of the package "bremory"
+    # start #
+    reh$rehBinary <- getBinaryREH(dyad=reh$edgelist[,2],D=reh$D)
+    reh$risksetMatrix <- as.matrix(expand.grid(0:(reh$N-1),0:(reh$N-1)))
+    reh$risksetMatrix <- reh$risksetMatrix[-which(reh$risksetMatrix[,1]==reh$risksetMatrix[,2]),c(2,1)]
+    reh$risksetCube <- array(NA,dim=c(reh$N,reh$N,1))
+    idx <- 0
+    for(n_row in 1:reh$N){
+      for(n_col in 1:reh$N){
+        if(n_row != n_col){
+          reh$risksetCube[n_row,n_col,1] <- idx
+          idx <- idx + 1
+        }
+      }
+    }
+    edgelist_conv <- matrix(NA,nrow=reh$M,ncol=2)
+    for(m in 1:reh$M){
+      edgelist_conv[m,] <- reh$risksetMatrix[reh$edgelist[m,2]+1,]
+    }
+    reh_estimate <- reh
+    reh$edgelist <- data.frame(time=reh$edgelist[,1],actor1=edgelist_conv[,1],actor2=edgelist_conv[,2],type=rep(0,reh$M),weight=reh$edgelist[,3])
+    rm(n_row,n_col,idx,m,edgelist_conv)
+    # end #
+    # adapted temporarily to the current version of the package "bremory"
+  
+    ### --RELEVENT-- ###
     # converting the edgelist to a suitable format for relevent::rem()
-    env$statisticsREH$edgelist <- data.matrix(convertToReleventEdgelist(reh = reh))
+    #env$statisticsREH$edgelist <- data.matrix(convertToReleventEdgelist(reh = reh))
+    ### --RELEVENT-- ###
 
     q <- 1
     q_rej <- 0
@@ -247,11 +265,9 @@ smm <- function(formula = NULL,
     cat("\n Starting estimating the bag of models ! \n")
     while(q <= env$stepwiseModels$Q)
     {   
-        print(q)
         start_time_q <- Sys.time()
         modelStatus <- FALSE
         while(!modelStatus){
-
           if(generateIntervalsFlag){
             env$statisticsREH$widths_q <-  bremory::intervals(K= env$stepwiseModels$intervals$K[q],
                                                         minDiff = intervals$minDiff,
@@ -268,15 +284,11 @@ smm <- function(formula = NULL,
           #getCountsOMP (OpenMP parallelization in C++)
           if(length(env$statisticsREH$endo_effects)>0){
 
-            ### TRY FOR TIME MEASURING ###
-            for(a in 1:100){
-            ### TRY FOR TIME MEASURING ###
-
             # getIntervals() will find per each time point the lower and the upper bound for each interval and will automatically assign it to the object 'intervals_backwards'
             start_time <-  Sys.time()
             getIntervals(env = globalenv(), 
                           widths = env$statisticsREH$widths_q, 
-                          time = reh$edgelist$time, 
+                          time = cumsum(reh$intereventTime), 
                           M = reh$M, 
                           K_q = env$statisticsREH$K_q,
                           nthreads = nthreads) # reh$edgelist$time
@@ -294,30 +306,19 @@ smm <- function(formula = NULL,
             indices <- getCountsIndex(intervals = env$statisticsREH$intervals, 
                                       counts = cbind(env$statisticsREH$counts[,1:2],
                                       c(0:(dim(env$statisticsREH$counts)[1]-1))),
-                                      nthreads = nthreads
-                                      )
+                                      nthreads = nthreads)
             env$statisticsREH$intervals[,3] <-  indices
-            ### TRY FOR TIME MEASURING ###
-            #rm(intervals_loc,indices) this was uncommented and remove the same command at line 324
-            ### TRY FOR TIME MEASURING ###
-
+            rm(intervals_loc,indices)
+         
             ### calculating effects ###
             endogenous_stats <- getEndoEffects(env = env,
                                               M = reh$M, 
                                               D = reh$D,
-                                              time = reh$edgelist$time,
+                                              time = reh$edgelist[,1],
                                               edgelist = data.matrix(reh$edgelist), 
                                               risksetMatrix = reh$risksetMatrix, 
                                               risksetCube0 = reh$risksetCube[,,1], # still one event type is used (need to make a change)
                                               nthreads = nthreads) 
-
-            ### TRY FOR TIME MEASURING ###     
-            end_time <- Sys.time()
-            cat("time elapsed:",as.numeric(end_time-start_time),"\n")
-            env$time_comp <- c(env$time_comp,as.numeric(end_time-start_time))
-            rm(intervals_loc,indices)                             
-            }
-            ### TRY FOR TIME MEASURING ###
 
             # create names for endongenous and exogenous variables
             rep_names <- rep(c(env$statisticsREH$endo_effects), each = env$statisticsREH$K_q)
@@ -332,45 +333,42 @@ smm <- function(formula = NULL,
             env$statisticsREH$intervals <- NULL
           }
           else{endogenous_stats <- NULL}
-          stats <- abind::abind(endogenous_stats,env$Pshift_loc,env$statisticsREH$exogenous_stats, along = 3)
+          stats <- abind::abind(endogenous_stats,env$statisticsREH$exogenous_stats, along = 3) #env$Pshift_loc
           
-          ##### relevent::rem function #####  
+          
           # estimating model with relevent package #
           stats_rem <- stats[firstEvent:lastEvent,,]
 
-          #saving statistics (TO REMOVE)
-          #local_widths <- env$statisticsREH$widths_q
-          #save(local_widths,stats_rem,file=paste(q,"_interval.RData",sep=""))
+          # adapted temporarily for the current version of the package "bremory"
+          # start #
+          if(q==1) {
+            env$stats_nomemory <- stats_rem
+            stats_rem[,,-dim(stats_rem)[3]] <- stats_rem[,,-dim(stats_rem)[3]]/reh$M}
+          # end #
+          # adapted temporarily for the current version of the package "bremory"
 
-          model_q <- tryCatch(relevent::rem(eventlist = env$statisticsREH$edgelist[firstEvent:lastEvent,], 
-                                    statslist = stats_rem,
-                                    supplist = supplist,
-                                    timing = "interval",
-                                    estimator = "MLE"), error = function(error_message) {NULL}) 
-
-          ## remstimate here ##
-          #model_q_remstimate <- tryCatch(remstimate::remstimate(reh = reh_remstimate,
-          #                                stats = stats_rem,
-          #                                method =  "MLE",
-          #                                model = "tie",
-          #                                ncores = nthreads), error = function(error_message) {NULL})  
-          #if(!is.null(model_q_remstimate)){
-          #    Sigma <- tryCatch(as.matrix(solve(model_q_remstimate$hessian)), 
-          #                              error = function(error_message) {matrix(-1,nrow=dim(stats_rem)[3],ncol=dim(stats_rem)[3])})
-          #  if(isSymmetric(model_q_remstimate$hessian) & (Sigma[1,1] != (-1)) ){
-          #          modelStatus <- TRUE               
-          #  }
-          #}                                
-          ## remstimate here ##                           
-                            
-          # update modelStatus
+          ### --RELEVENT-- ###
+          ##### relevent::rem function #####  
+          #model_q <- tryCatch(relevent::rem(eventlist = env$statisticsREH$edgelist[firstEvent:lastEvent,], 
+          #                          statslist = stats_rem,
+          #                          supplist = supplist,
+          #                          timing = "interval",
+          #                          estimator = "MLE"), error = function(error_message) {NULL}) 
+          ### --RELEVENT-- ###
+          model_q <- tryCatch(remstimate::remstimate(reh = reh_estimate,
+                                          stats = stats_rem,
+                                          method =  "MLE",
+                                          model = "tie",
+                                          ncores = nthreads), error = function(error_message) {NULL}) 
+                                          
+          # update modelStatus 
           if(!is.null(model_q)){
               Sigma <- tryCatch(as.matrix(solve(model_q$hessian)), 
                                         error = function(error_message) {matrix(-1,nrow=dim(stats_rem)[3],ncol=dim(stats_rem)[3])})
             if(isSymmetric(model_q$hessian) & (Sigma[1,1] != (-1)) ){
                     modelStatus <- TRUE               
             }
-          }
+          }                                                          
           
           if(modelStatus){
             # WAIC routine 
@@ -393,6 +391,7 @@ smm <- function(formula = NULL,
               #                                                event = event,
               #                                                interevent_time = reh$edgelist$time[time_points[m]]-reh$edgelist$time[time_points[m]-1]))
               #}
+
               ### temporarily commented  
               #lpd <- bremory::lpdWAIC(pars = post_pars, 
               #                        stats = stats_waic[,,time_points], 
@@ -479,7 +478,7 @@ smm <- function(formula = NULL,
         # update q index
         q <- q+1
         # Progress bar         
-        #setTxtProgressBar(pb, (q-1))
+        setTxtProgressBar(pb, (q-1))
     }
     env$stepwiseModels$q_rej <- q_rej
 

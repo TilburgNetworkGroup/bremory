@@ -14,39 +14,39 @@ intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, i
 
     K_input <- K
     if(intervals == "all"){
-
         nsim <- nsimK/2  
         widths_matrix <- matrix(NA, nrow = (1+nsimK)*length(K), ncol = (max(K)+1) ) 
         widths_type <- NULL
         iter_K <- 1
-        for(K in min(K):max(K)){
+        minDiff <- minDiff/maxWidth
+        for(k in min(K):max(K)){
             out_K <- NULL
              # for the storing of widths
-            matrix_loc <- matrix(NA, nrow = (2*nsim+1), ncol = (K+1)) 
+            matrix_loc <- matrix(NA, nrow = (2*nsim+1), ncol = (k+1)) 
 
             # (0) equal widths
-            matrix_loc[1,] <- seq(0,maxWidth,length=(K+1))
+            matrix_loc[1,] <- seq(0,maxWidth,length=(k+1))
             
             # (1) increasing widths
             out_K <- matrix(unlist(lapply(1:nsim,function(s){
-            diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,K))))
+            diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,k))))
                                 while(min(diffs)<minDiff){
-                                    diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,K))))
+                                    diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,k))))
                                 }
                                 c(0,cumsum(diffs))
-                                })),byrow=TRUE,ncol=K+1)
+                                })),byrow=TRUE,ncol=k+1)
             out_K <- out_K * maxWidth
             matrix_loc[2:(nsim+1),] <- out_K
  
 
             # ...(2) decreasing widths (maybe here we should generate again increasing and reverse them, instead of using the same increasing)
-            span_interval <- t(apply(matrix_loc[c(2:(nsim+1)),],1,diff))
-            span_interval <- span_interval[,dim(span_interval)[2]:1]
+            span_interval <- t(apply(rbind(matrix_loc[c(2:(nsim+1)),]),1,diff))
+            span_interval <- rbind(span_interval[,dim(span_interval)[2]:1])
             widths_decr <- t(apply(span_interval,1,function(x) cumsum(c(0,x))))
             matrix_loc[c((nsim+2):((nsim*2)+1)),] <- widths_decr
             
             # ...(3) store widths
-            widths_matrix[c((1+(nsimK+1)*(iter_K-1)):(iter_K*(nsimK+1))),c(1:(K+1))] <- matrix_loc
+            widths_matrix[c((1+(nsimK+1)*(iter_K-1)):(iter_K*(nsimK+1))),c(1:(k+1))] <- matrix_loc
             widths_type <- c(widths_type,c("equal",rep("increasing",nsim),rep("decreasing",nsim))) #,rep("equal",nsim)
             iter_K <- iter_K + 1
 

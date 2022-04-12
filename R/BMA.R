@@ -2,7 +2,7 @@
 
 
 #' bma
-#'t
+#'
 #' A function which return an object of class 'bma' with the estimate of the posterior distribution of effects according to specific weighting systems
 #'
 #' @param smm can be either an object of class 'smm' or a list of objects of class 'smm'. The second option allows to combine multiple smm objects provided that they refer to the same model specification but to different sets of stepwise memory models.

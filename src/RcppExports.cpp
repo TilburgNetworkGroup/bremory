@@ -42,16 +42,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // getBinaryREH
-arma::mat getBinaryREH(arma::uword M, arma::uword N, arma::mat edgelist, arma::umat riskset_matrix);
-RcppExport SEXP _bremory_getBinaryREH(SEXP MSEXP, SEXP NSEXP, SEXP edgelistSEXP, SEXP riskset_matrixSEXP) {
+arma::mat getBinaryREH(arma::uvec dyad, arma::uword D);
+RcppExport SEXP _bremory_getBinaryREH(SEXP dyadSEXP, SEXP DSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::uword >::type M(MSEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type N(NSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type edgelist(edgelistSEXP);
-    Rcpp::traits::input_parameter< arma::umat >::type riskset_matrix(riskset_matrixSEXP);
-    rcpp_result_gen = Rcpp::wrap(getBinaryREH(M, N, edgelist, riskset_matrix));
+    Rcpp::traits::input_parameter< arma::uvec >::type dyad(dyadSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type D(DSEXP);
+    rcpp_result_gen = Rcpp::wrap(getBinaryREH(dyad, D));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -363,7 +361,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bremory_smmInertia", (DL_FUNC) &_bremory_smmInertia, 0},
     {"_bremory_pmmInertia", (DL_FUNC) &_bremory_pmmInertia, 0},
     {"_bremory_pmmDecay", (DL_FUNC) &_bremory_pmmDecay, 0},
-    {"_bremory_getBinaryREH", (DL_FUNC) &_bremory_getBinaryREH, 4},
+    {"_bremory_getBinaryREH", (DL_FUNC) &_bremory_getBinaryREH, 2},
     {"_bremory_convertToReleventEdgelist", (DL_FUNC) &_bremory_convertToReleventEdgelist, 1},
     {"_bremory_getIntervals", (DL_FUNC) &_bremory_getIntervals, 6},
     {"_bremory_getCountsOMP", (DL_FUNC) &_bremory_getCountsOMP, 3},

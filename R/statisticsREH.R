@@ -128,7 +128,7 @@ statisticsREH <- function(formula, data, reh, effects, env){
                 
                 rearranged_exo_stats <- function(reh,exo_stats){  
                     position_rearranged <- NULL
-                        for(i in 1:dim(reh$risksetMatrix)[1]){
+                        for(i in 1:reh$D){
                             sender_old <- exo_stats$actor1[i] #reh$risksetMatrix[i,1]
                             receiver_old <- exo_stats$actor2[i] #reh$risksetMatrix[i,2]
                             type_old <- exo_stats$type[i] #reh$risksetMatrix[i,3]
@@ -138,7 +138,7 @@ statisticsREH <- function(formula, data, reh, effects, env){
                             receiver_new <- as.numeric(dict_loc$actors$actorName[which(dict_loc$actors$actorID== receiver_old)])+1
                             type_new <- as.numeric(dict_loc$types$typeName[which(dict_loc$types$typeID == type_old)])+1
 
-                            position_new <- reh$risksetCube[sender_new,receiver_new,type_new]+1
+                            position_new <- remify::getDyadIndex()+1 #reh$risksetCube[sender_new,receiver_new,type_new]+1
                             position_rearranged <- c(position_rearranged,position_new)
                         }
                     exo_stats_r <- cbind(exo_stats[position_rearranged,-c(1:3)])
@@ -155,8 +155,9 @@ statisticsREH <- function(formula, data, reh, effects, env){
                 env$statisticsREH$S <- dim(exogenous_rearranged)[3] #+ 1 # this +1 is temporarily herebecause of the PShift variable
             }
     }
-    else{env$statisticsREH$exogenous_stats <- NULL
-         env$statisticsREH$S <- 0}
+    else{env$statisticsREH$exogenous_stats <- array(1,dim=c(reh$M,reh$D,1))
+        dimnames(env$statisticsREH$exogenous_stats)[[3]] <- c("Intercept")
+         env$statisticsREH$S <- 1}
 
 
     # Creating NULL objects for other routines

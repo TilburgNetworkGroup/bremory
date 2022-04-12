@@ -29,7 +29,7 @@ smm(
 
 \item{effects}{[working]list of two objects: effects$endogenous is a vector of strings with specified the effects of interest; effects$exogenous is an array [M*dyads*exogenous_effects]}
 
-\item{intervals}{it can be specified in two different ways: (1) as a list of intervals with "widths", "K" and "type"; (2) as list specifying: a vector of integers indicating the number of steps per stepwise model ("K"), the maximum time width for intervals ("maxWidth"), the minimum width for intervals ("minDiff"), the number of simulations per each K ("nsimK"). With the second specification, the function bremory::intervals() will be used.}
+\item{intervals}{it can be specified in two different ways: (1) as a list of intervals with "widths", "K"; (2) as list specifying: a vector of integers indicating the number of steps per stepwise model ("K"), the maximum time width for intervals ("maxWidth"), the minimum width for intervals ("minDiff"), the number of simulations per each K ("nsimK"). With the second specification, the function bremory::intervals() will be used.}
 
 \item{WAIC}{default is TRUE and is needed where WAIC weights have to be estimated}
 

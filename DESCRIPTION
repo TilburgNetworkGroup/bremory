@@ -10,10 +10,8 @@ LazyData: true
 LinkingTo:
     RcppArmadillo,
     Rcpp,
-    RcppParallel,
     RcppDist
 Imports:
-    Rcpp,
-    RcppParallel (>= 4.4.2)
+    Rcpp
 RoxygenNote: 7.1.2
 SystemRequirements: GNU make

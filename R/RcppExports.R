@@ -39,17 +39,14 @@ pmmDecay <- function() {
 
 #' getBinaryREH()
 #'
+#' @param dyad vector of dyad occurred (reh$edgelist[,2])
+#' @param D numbr of possible dyads (reh$D)
 #'
-#' @param M number of relational events observed
-#' @param N number of actors
-#' @param edgelist matrix of (time,sender,receiver)
-#' @param riskset_matrix matrix of possible dyadic events with column_order per each cell (this will be the order in the binaryREH matrices columns)
-#'
-#' @return Matrix with dimensions given by the number of events (by row) and the dimension of the risk set (by column) .
+#' @return matrix with dimensions given by the number of events (by row) and the dimension of the risk set (by column) .
 #'
 #' @export
-getBinaryREH <- function(M, N, edgelist, riskset_matrix) {
-    .Call('_bremory_getBinaryREH', PACKAGE = 'bremory', M, N, edgelist, riskset_matrix)
+getBinaryREH <- function(dyad, D) {
+    .Call('_bremory_getBinaryREH', PACKAGE = 'bremory', dyad, D)
 }
 
 #' convertToReleventEdgelist()
