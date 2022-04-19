@@ -6,6 +6,8 @@
 #include <iterator>
 #include <string>
 #include "decay_functions.h"
+#include <iomanip>
+
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -235,45 +237,17 @@ arma::mat TClosure(arma::mat counts,
     {
     //#pragma omp parallel for private(m,i,lb_ub,elapsed_lj,time_lj,t_star,upper_index,lower_index,upper_index_time_diff,lower_index_time_diff) shared(M,k,K_q,out,edgelist,riskset_matrix,intervals_backward)
     arma::uword m,i,d,lower_index; //,upper_index;
-    double elapsed_lj,time_lj,t_star; //,upper_index_time_diff,lower_index_time_diff;
+    long double elapsed_lj,time_lj,t_star; //,upper_index_time_diff,lower_index_time_diff;
     arma::rowvec lb_ub(2);
     arma::mat out(M, riskset.n_rows, arma::fill::zeros);
 
-    omp_set_dynamic(0);         // disabling dynamic teams
-    omp_set_num_threads(n_cores); // number of threads for all consecutive parallel regions
-    #pragma omp parallel for private(m,i,d,lb_ub,elapsed_lj,time_lj,t_star,lower_index) shared(M,k,K_q,out,edgelist,riskset_matrix,intervals_backward)
-    for(m = 1; m < M; m++){
-        //lb_ub = intervals_backward(((K_q*m)+k),arma::span(0,1));
-        //if(lb_ub(0)!=(-1)){
-        //    arma::mat edgelist_loc = edgelist(arma::span(lb_ub(0),lb_ub(1)),arma::span::all);
-        //    for(i = 0; i < edgelist_loc.n_rows; i++){
-        //        // backward seeking, every event is an (l,j) type of event
-        //        elapsed_lj = edgelist(m-1,0) - edgelist_loc(i,0);
-        //        time_lj = edgelist_loc(i,0);
-        //        t_star = time_lj - elapsed_lj;
-        //        if((t_star > edgelist(0,0)) & (elapsed_lj>0)){
-        //            arma::mat edgelist_sub = edgelist(arma::span(0,(lb_ub(0)+i)),arma::span::all);
-        //            arma::urowvec greater = arma::find(edgelist_sub.col(0) >= t_star).t();
-        //            arma::urowvec lower = arma::find(edgelist_sub.col(0) < t_star).t();
-        //            upper_index = min(greater);
-        //            lower_index = max(lower);
-        //            upper_index_time_diff = (edgelist_sub(upper_index,0) - t_star);
-        //            lower_index_time_diff = (t_star - edgelist_sub(lower_index,0));               
-        //            if(upper_index_time_diff < lower_index_time_diff){
-        //                if((edgelist_sub(upper_index,2) == edgelist_loc(i,1)) & (edgelist_sub(upper_index,1) != edgelist_loc(i,2))){
-        //                            out(m,riskset_matrix(edgelist_sub(upper_index,1),edgelist_loc(i,2))) += 1; 
-        //                }
-        //            }
-        //            else{
-        //                if((edgelist_sub(lower_index,2) == edgelist_loc(i,1)) & (edgelist_sub(lower_index,1) != edgelist_loc(i,2))){
-        //                            out(m,riskset_matrix(edgelist_sub(lower_index,1),edgelist_loc(i,2))) += 1; 
-        //                }
-        //            }
-        //        }
-        //    }    
-        //}
 
-        // new formula below :
+    Rcpp::Rcout << "running precision (long double 1) ! \n";
+
+    //omp_set_dynamic(0);         // disabling dynamic teams
+    //omp_set_num_threads(n_cores); // number of threads for all consecutive parallel regions
+    //#pragma omp parallel for private(m,i,d,lb_ub,elapsed_lj,time_lj,t_star,lower_index) shared(M,k,K_q,out,edgelist,riskset_matrix,intervals_backward)
+    for(m = 1; m < M; m++){
         lb_ub = intervals_backward(((K_q*m)+k),arma::span(0,1));
         if(lb_ub(0)!=(-1)){
             arma::mat edgelist_loc = edgelist(arma::span(lb_ub(0),lb_ub(1)),arma::span::all);

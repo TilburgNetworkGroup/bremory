@@ -9,6 +9,7 @@
 #include <map>
 #include <iterator>
 #include <string>
+#include <iomanip>
 #include "stepwise_estimation.h"
 #include "smooth_estimation.h"
 #include "decay_functions.h"
@@ -681,20 +682,19 @@ arma::cube getDraws(arma::uvec sample_models,
 
 //' tryClone
 //'
-//' @param lambda aa
-//' @param index bb
-//' @param stats_col cc
+//' @param input
 //'
 //' @return input [dataframe]
 //'
 //' @export
 // [[Rcpp::export]]
-arma::vec tryClone(arma::vec lambda, arma::uword index, arma::vec stats_col){
+double tryClone(double input){
     
-
-    arma::vec out(lambda.n_elem,arma::fill::zeros);
-    for(arma::uword d = 0; d < lambda.n_elem; d++)
-        out += exp(lambda.at(d)) * stats_col;
-    out /= index;
-    return out;
+double f =3.14159;
+  std::cout << std::setprecision(5) << f << '\n';
+  std::cout << std::setprecision(9) << f << '\n';
+  std::cout << std::fixed;
+  std::cout << std::setprecision(5) << f << '\n';
+  std::cout << std::setprecision(9) << f << '\n';
+  return 0.0;
 }

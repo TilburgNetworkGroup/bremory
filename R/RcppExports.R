@@ -267,15 +267,13 @@ getDraws <- function(sample_models, which_pars, n_pars, n_stats, input, knots_se
 
 #' tryClone
 #'
-#' @param lambda aa
-#' @param index bb
-#' @param stats_col cc
+#' @param input
 #'
 #' @return input [dataframe]
 #'
 #' @export
-tryClone <- function(lambda, index, stats_col) {
-    .Call('_bremory_tryClone', PACKAGE = 'bremory', lambda, index, stats_col)
+tryClone <- function(input) {
+    .Call('_bremory_tryClone', PACKAGE = 'bremory', input)
 }
 
 #' stepwise 

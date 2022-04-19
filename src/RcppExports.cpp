@@ -259,15 +259,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // tryClone
-arma::vec tryClone(arma::vec lambda, arma::uword index, arma::vec stats_col);
-RcppExport SEXP _bremory_tryClone(SEXP lambdaSEXP, SEXP indexSEXP, SEXP stats_colSEXP) {
+double tryClone(double input);
+RcppExport SEXP _bremory_tryClone(SEXP inputSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type index(indexSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type stats_col(stats_colSEXP);
-    rcpp_result_gen = Rcpp::wrap(tryClone(lambda, index, stats_col));
+    Rcpp::traits::input_parameter< double >::type input(inputSEXP);
+    rcpp_result_gen = Rcpp::wrap(tryClone(input));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -376,7 +374,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bremory_logpJi", (DL_FUNC) &_bremory_logpJi, 4},
     {"_bremory_smoothing_posterior", (DL_FUNC) &_bremory_smoothing_posterior, 6},
     {"_bremory_getDraws", (DL_FUNC) &_bremory_getDraws, 6},
-    {"_bremory_tryClone", (DL_FUNC) &_bremory_tryClone, 3},
+    {"_bremory_tryClone", (DL_FUNC) &_bremory_tryClone, 1},
     {"_bremory_stepwiseWeight", (DL_FUNC) &_bremory_stepwiseWeight, 2},
     {"_bremory_linearWeight", (DL_FUNC) &_bremory_linearWeight, 2},
     {"_bremory_twoStepsWeight", (DL_FUNC) &_bremory_twoStepsWeight, 2},
