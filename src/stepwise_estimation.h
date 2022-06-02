@@ -5,7 +5,6 @@
 #include <typeinfo>
 #include <iterator>
 #include <string>
-#include "decay_functions.h"
 #include <iomanip>
 
 
@@ -237,12 +236,9 @@ arma::mat TClosure(arma::mat counts,
     {
     //#pragma omp parallel for private(m,i,lb_ub,elapsed_lj,time_lj,t_star,upper_index,lower_index,upper_index_time_diff,lower_index_time_diff) shared(M,k,K_q,out,edgelist,riskset_matrix,intervals_backward)
     arma::uword m,i,d,lower_index; //,upper_index;
-    long double elapsed_lj,time_lj,t_star; //,upper_index_time_diff,lower_index_time_diff;
+    double elapsed_lj,time_lj,t_star; //,upper_index_time_diff,lower_index_time_diff;
     arma::rowvec lb_ub(2);
     arma::mat out(M, riskset.n_rows, arma::fill::zeros);
-
-
-    Rcpp::Rcout << "running precision (long double 1) ! \n";
 
     //omp_set_dynamic(0);         // disabling dynamic teams
     //omp_set_num_threads(n_cores); // number of threads for all consecutive parallel regions

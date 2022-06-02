@@ -29,12 +29,13 @@ smm <- function(formula = NULL,
                 ELPD = FALSE,
                 firstEvent = NULL,
                 lastEvent = NULL,
-                nthreads = parallel::detectCores()-2,
+                nthreads = NULL,
                 filename = "simulation_0", # probably this argument will be removed
                 env = globalenv(),
                 ...)
 {
     more.args <- list(...)
+
     # check for input 'reh'
     if(is.null(reh)) stop("Input 'reh' cannot be left NULL.")
     else{
@@ -339,13 +340,16 @@ smm <- function(formula = NULL,
           # estimating model with relevent package #
           stats_rem <- stats[firstEvent:lastEvent,,]
 
+          ## -- OLD CHECK TO REMOVE -- ##
           # adapted temporarily for the current version of the package "bremory"
           # start #
-          if(q==1) {
-            env$stats_nomemory <- stats_rem
-            stats_rem[,,-dim(stats_rem)[3]] <- stats_rem[,,-dim(stats_rem)[3]]/reh$M}
+          #if(q==1) {
+          #  env$stats_nomemory <- stats_rem
+          #  stats_rem[,,-dim(stats_rem)[3]] <- stats_rem[,,-dim(stats_rem)[3]]/reh$M
+          #}
           # end #
           # adapted temporarily for the current version of the package "bremory"
+          ## -- OLD CHECK TO REMOVE -- ##
 
           ### --RELEVENT-- ###
           ##### relevent::rem function #####  
@@ -452,7 +456,7 @@ smm <- function(formula = NULL,
             # saving partial results every 5 models
             if(q%%250==0)
             {
-                cat('\n ... Saving partial results ... \n')
+                # cat('\n ... Saving partial results ... \n')
                 env$stepwiseModels$q_rej <- q_rej
                 save(stepwiseModels,envir = env, file = paste(filename,".RData",sep="")) # also save 'reh'
 
@@ -598,183 +602,6 @@ merge.smm <- function(smm){
 ##########(END)             Methods for `smm` object             (END)#################
 #######################################################################################
 #######################################################################################
-
-
-
-#' PSIS_LFO_CV_1_SAP
-#'
-#' A function which run th PSIS with LFO CV by using 1-Step-Ahead-Predictions 
-#'
-#' @param n_dyads ...
-#' @param eventlist ...
-#' @param statslist ...
-#' @param t ...
-#' @param firstEvent ...
-#' @param lastEvent ...
-#' @param L ...
-#' @param n_sim_is ...
-#' @param tau ...
-#' @param cores ...
-
-#'
-#' @return  the function doesn't return any output but updates objects inside the environment 'stepwiseModels'
-#' 
-#' @export
-PSIS_LFO_CV_1_SAP <- function(n_dyads,eventlist,statslist,t,firstEvent,lastEvent,L,n_sim_is,tau,cores)
-{
-  J_i <- L+1 # set of time points contributing in the calculation of the importance ratios. 
-  time_points <- ((L+1):lastEvent) 
-  
-  log_p_J_i <- matrix(NA, nrow = length(time_points), ncol = n_sim_is)
-
-  # output list objects
-  elpd_lfo <- rep(NA,length(time_points))
-  count_no_estimation <- 0 # know how many times the model is estimated considering a larger subset than the previous step
-  k_vec <- NULL
-  
-  supplist_L <- list() 
-  supplist_L[[1]]<-matrix(TRUE, length(firstEvent:L), n_dyads)
-
-  # helper functions taken from the tutorial: https://mc-stan.org/loo/articles/loo2-lfo.html
-  # more stable than log(sum(exp(x))) 
-  log_sum_exp <- function(x) {
-    max_x <- max(x)  
-    max_x + log(sum(exp(x - max_x)))
-  }
-
-  # more stable than log(mean(exp(x)))
-  log_mean_exp <- function(x) {
-    log_sum_exp(x) - log(length(x))
-  }
-
-  # estimate the model subsetting in 1:L (first L events)
-  #### relevent::rem ####  
-  model_subset <- relevent::rem(eventlist = eventlist[firstEvent:L,],
-                                statslist = statslist[firstEvent:L,,],
-                                supplist = supplist_L,
-                                timing = "interval",
-                                estimator = "MLE")
-                               
-  #### relevent::rem ####
-
-  # store MLEs and standard errors
-  mle_subset <- model_subset$coef
-  vcov_subset <- tryCatch(as.matrix(solve(model_subset$hessian)),
-                            error = function(error_message) {matrix(-1,nrow=dim(statslist)[2],ncol=dim(statslist)[2])})                  
-  if(vcov_subset[1,1] != (-1)){
-    #draw a sample from a multivariate normal distribution (approximation of the posterior distribution)
-    pars_draws <- t(mvtnorm::rmvnorm(n = n_sim_is, mean = mle_subset, sigma = vcov_subset)) # dim = [pars x n_sim_is]
-
-    # first step ahead (L+1) is predicted with the exact LFO
-    event <- numeric(n_dyads)
-    event[eventlist[time_points[1],1]] <- 1
-    log_p_J_i[1,] <- logpJi(pars = pars_draws,
-                        stats = statslist[time_points[1],,],
-                        event = event,
-                        interevent_time = t[time_points[1]]-t[time_points[1]-1]) 
-    # exact LFO prediction                                   
-    elpd_lfo[1] <-  log_mean_exp(log_p_J_i[1,]) #log(mean(exp(log_p_J_i[1,]))) 
-
-    i_star <- 1 # everything starts from i = L+1
-    i <- 2
-    # progress bar
-    c('\n Progress of PSIS-LFO-1SAP (latest algorithm')
-    pb <- txtProgressBar(min = 1, max = length(time_points), style = 3)
-    while(i <= length(time_points)) 
-    {
-      J_i <- c(J_i,time_points[i])
-      event <- numeric(n_dyads)
-      event[eventlist[time_points[i],1]] <- 1
-      log_p_J_i[i,] <- logpJi(pars = pars_draws,
-                        stats = statslist[time_points[i],,],
-                        event = event,
-                        interevent_time = t[time_points[i]]-t[time_points[i]-1])    
-
-      log_ratios <- as.vector(apply(rbind(log_p_J_i[i_star:i,]),2,sum))
-
-      psis_smooth <- suppressWarnings(loo::psis(log_ratios = log_ratios, cores = cores))
-      k <- psis_smooth$diag$par   
-      k_vec <- c(k_vec,k)
-      if(k < tau)
-      {   
-        psis_weights <-  weights(psis_smooth, normalize = TRUE)[, 1]
-
-        elpd_lfo[i] <- log_sum_exp(psis_weights + log_p_J_i[i,]) #log(sum(exp(log_p_J_i[i,])*psis_weights))         
-      } else
-      {
-        cat('... reestimating \n')
-        i_star <- i # useful to filter out from log_p_J_i those events that become part of the fitted model
-        J_i <- time_points[i] 
-
-        supplist_L <- list() 
-        supplist_L[[1]] <- matrix(TRUE, length(firstEvent:(time_points[i]-1)) , n_dyads)
-
-        #re-estimating the model until (time_points[i]-1)
-        #### relevent::rem ####                        
-        model_subset <- relevent::rem(eventlist = eventlist[firstEvent:(time_points[i]-1),],
-                                      statslist = statslist[firstEvent:(time_points[i]-1),,],
-                                      supplist = supplist_L,
-                                      timing = "interval",
-                                      estimator = "MLE")
-        #### relevent::rem ####
-
-        mle_subset <- model_subset$coef
-        vcov_subset <- as.matrix(solve(model_subset$hessian))
-        pars_draws <- t(mvtnorm::rmvnorm(n = n_sim_is, mean = mle_subset, sigma = vcov_subset)) # dim = [pars x n_sim_is]
-        
-        # estimating with exact LFO (using the new "pars_draws" matrix)
-        event <- numeric(n_dyads)
-        event[eventlist[time_points[i],1]] <- 1
-        log_p_J_i[i,] <- logpJi(pars = pars_draws,
-                        stats = statslist[time_points[i],,],
-                        event = event,
-                        interevent_time = t[time_points[i]]-t[time_points[i]-1]) 
-        elpd_lfo[i] <- log_mean_exp(log_p_J_i[i,]) #log(mean(exp(log_p_J_i[i,]))) 
-        count_no_estimation <- count_no_estimation + 1                                      
-      }
-      i <- i + 1
-      setTxtProgressBar(pb, i)
-    }
-  }
-  else{cat("PSIS-LFO did not run because of a singular hessian matrix")}
-
-  return(list(elpd_lfo = elpd_lfo, counts = count_no_estimation, k = k_vec))
-}
-
-#' formula_lab
-#'
-#' A function where do build up a formula object for smm and pmm
-#'
-#' @param input input of the function is a
-#'
-#' @return  the function returns a NULL
-#' 
-#' @export
-formula_lab <- function(input){
-
-  # parseEffectChoice()
-
-  # Inertia
-  inertia <- function(param = NULL, scaling = c("raw", "std", "prop","log"), start = 0, end = 0)
-  {
-    scaling <- match.arg(scaling)
-    prepEndoVar("inertia", param, scaling, start, end) # need to add a way to swap between smm and pmm 
-  }
- # prepEndoVar() // prepExoVar() // prepInteractVar() // should address both Actor Oriented and 
-  # Reciprocity
-
-  # InDegreeSender 
-  
-  # InDegreeReceiver
-  
-  # OutDegreeSender
-  
-  # OutDegreeReceiver
-  
-  # TransitivityClosure
-  
-  # CyclicClosure          
-}
 
 
 #' smmTemp (Stepwise Memory Models [Temporary Function])

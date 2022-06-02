@@ -24,7 +24,7 @@ smoothing_posterior(
 
 \item{post_gammas}{post_gammas}
 
-\item{n_pars}{n_pars}
+\item{U}{n_pars}
 }
 \value{
 a cube of posterior draws.

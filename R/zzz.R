@@ -9,6 +9,7 @@
 #'
 #' @docType package
 #' @useDynLib bremory
+#' @import ggplot2 gridExtra grDevices stats utils
 #' @importFrom Rcpp sourceCpp
 #' @name bremory
 NULL

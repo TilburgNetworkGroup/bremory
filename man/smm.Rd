@@ -14,7 +14,7 @@ smm(
   ELPD = FALSE,
   firstEvent = NULL,
   lastEvent = NULL,
-  nthreads = parallel::detectCores() - 2,
+  nthreads = NULL,
   filename = "simulation_0",
   env = globalenv(),
   ...

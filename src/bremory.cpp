@@ -11,65 +11,8 @@
 #include <string>
 #include <iomanip>
 #include "stepwise_estimation.h"
-#include "smooth_estimation.h"
-#include "decay_functions.h"
-#include "smm.h"
-#include "pmm.h"
 
 #define LOG(x) std::cout << x << "\n"
-
-//
-
-//' smmInertia()
-//'
-//'
-//' @param vuoto 
-//' 
-//' @return vuoto
-//'
-//' @export
-// [[Rcpp::export]]
-double smmInertia()
-{
-    bool intervals = true;
-    arma::vec K = {2,3,4,5};
-    double maxWidth = 3.0;
-    return smm::inertia(intervals,K,maxWidth);
-}
-
-//' pmmInertia()
-//'
-//'
-//' @param vuoto 
-//' 
-//' @return vuoto
-//'
-//' @export
-// [[Rcpp::export]]
-double pmmInertia()
-{
-    std::string decay = "exponential";
-    arma::vec pars = {3.0,0.5,1.0};
-    return pmm::inertia(decay,pars);
-}
-
-
-//' pmmDecay()
-//'
-//'
-//' @param vuoto 
-//' 
-//' @return vuoto
-//'
-//' @export
-// [[Rcpp::export]]
-std::vector<std::string> pmmDecay()
-{
-   return pmm::decay;
-}
-
-//
-
 
 //  BEGIN Preprocessing functions //
 
@@ -94,44 +37,6 @@ arma::mat getBinaryREH(arma::uvec dyad, arma::uword D)
         }
     return out;
 }
-
-
-//' convertToReleventEdgelist()
-//'
-//'
-//' @param edgelist input edgelist from 'reh' object
-//'
-//' @return data.frame
-//'
-//' @export
-// [[Rcpp::export]]
-Rcpp::DataFrame convertToReleventEdgelist(Rcpp::List reh)
-{
-    arma::uword m;
-    Rcpp::DataFrame edgelist = Rcpp::as<Rcpp::DataFrame>(reh["edgelist"]);
-    arma::vec intereventTime = Rcpp::as<arma::vec>(reh["intereventTime"]);
-    arma::ucube risksetCube = Rcpp::as<arma::ucube>(reh["risksetCube"]);
-    arma::uword M = edgelist.nrows();
-
-    arma::vec time = arma::cumsum(intereventTime);
-    arma::uvec actor1 = edgelist["actor1"];
-    arma::uvec actor2 = edgelist["actor2"];
-    arma::uvec type = edgelist["type"];
-    arma::uvec dyad(M);
-
-
-    for(m = 0; m < M; m++)
-        {
-            arma::uword actor1_m = actor1(m);
-            arma::uword actor2_m = actor2(m);
-            arma::uword type_m = type(m);
-            dyad(m) = risksetCube(actor1_m,actor2_m,type_m)+1;
-        }
-    Rcpp::DataFrame out = Rcpp::DataFrame::create(Rcpp::Named("dyad") = dyad, Rcpp::Named("time") = time);
-    return out;
-}
-
-
 //  END Preprocessing functions //
 
 //  BEGIN Statistics functions //
@@ -324,53 +229,6 @@ arma::cube getEndoEffects(Rcpp::Environment env,
     return stats_array;
 }
 
-//' getSmoothEndoEffects
-//'
-//' @param reh "reh" object
-//' @param endo_effects string vector indicating the endogenous effects
-//' @param endo_memory_pars function for the decay of past events influence
-//' @param nthreads number of corse to be used in the parallelization
-//'
-//' @return array of Statistics specified 
-//'
-//' @export
-// [[Rcpp::export]]
-arma::cube getSmoothEndoEffects(Rcpp::List reh, std::vector<std::string> endo_effects, Rcpp::List endo_memory_pars, arma::uword nthreads)
-{   
-    arma::uword M = reh["M"];
-    arma::uword N = reh["N"];
-    arma::uword C = reh["C"];
-    arma::uword D = reh["D"];
-    //Rcpp::DataFrame edgelist = reh["edgelist"];
-    arma::umat risksetMatrix = reh["risksetMatrix"];
-    arma::ucube risksetCube = reh["risksetCube"];
-    arma::mat rehBinary = reh["rehBinary"];
-    //Rcpp::RObject 
-    Rcpp::DataFrame edgelist_loc = Rcpp::as<Rcpp::DataFrame>(reh["edgelist"]);
-    arma::uvec actor1 = Rcpp::as<arma::uvec>(edgelist_loc["actor1"]);
-    arma::uvec actor2 = Rcpp::as<arma::uvec>(edgelist_loc["actor2"]);
-    arma::uvec type = Rcpp::as<arma::uvec>(edgelist_loc["type"]);
-    arma::umat edgelist(M,3);
-    edgelist.col(0) = actor1;
-    edgelist.col(1) = actor2;
-    edgelist.col(2) = type;
-
-    arma::uword P = endo_effects.size(); // check if .size() works with std::vector<std::string>
-    arma::vec t = edgelist_loc["time"];
-    arma::uword p;
-
-    // allocating memory for the output array
-    arma::cube stats_array(M,D,P); 
-
-    for(p = 0; p < P; p++){
-        arma::mat out = computeSmoothEffect(endo_effects[p], endo_memory_pars[p], edgelist, rehBinary, risksetMatrix, risksetCube, t, M, N, C, D, nthreads);
-        stats_array.slice(p) = out;
-        //Rcpp::Rcout << "computation of " << endo_effects[p] << " successfully completed!\n"; // printing out some comments (will be removed)
-    }
-    
-    return stats_array;
-}
-
 //' lpd (Log-Pointwise Density of REM)
 //'
 //' @param pars is a vector of parameters (note: the order must be aligned witht the column order in 'stats')
@@ -398,91 +256,6 @@ double lpd(arma::vec pars, arma::mat stats, arma::uvec event, double interevent_
         return lpd;
     }
 
-
-//' nllik (negative log-likelihood rem model)
-//'
-//' @param pars is a vector of parameters (note: the order must be aligned witht the column order in 'stats')
-//' @param stats is a cube of dimensions n_dyads*variables*M with statistics of interest by column and dyads by row.
-//' @param event_binary is a matrix of ones and zeros of dimensions M*n_dyads : 1 indicating the observed dyad and 0 the non observed dyads.
-//' @param interevent_time the vector of time differences between the current time point and the previous event time.
-//' @param nthreads nthreads
-//'
-//' @return log-pointwise density value of a specific time point
-//'
-//' @export
-// [[Rcpp::export]]  
-double nllik(arma::vec pars, arma::cube stats, arma::umat event_binary, arma::vec interevent_time, int nthreads){
-        arma::uword n_dyads = event_binary.n_cols;
-        arma::uword i,m;
-        arma::uword M = event_binary.n_rows;
-        arma::vec log_lambda(n_dyads,arma::fill::zeros) ;
-        arma::vec llik(M,arma::fill::zeros);
-
-        omp_set_dynamic(0);           // disabling dynamic teams
-        omp_set_num_threads(nthreads); // number of threads for all consecutive parallel regions
-        #pragma omp parallel for private(m,i,log_lambda) shared(n_dyads,M,stats,event_binary,interevent_time,llik)
-        for(m = 0; m < M; m++)
-        {
-            log_lambda = stats.slice(m) * pars;
-            for(i = 0; i < n_dyads; i++){
-                if(event_binary(m,i) == 0){
-                    llik(m) -= exp(log_lambda(i))*interevent_time(m);
-                }
-                else{
-                    llik(m) += log_lambda(i)-exp(log_lambda(i))*interevent_time(m);
-                }
-            }
-        }
-        return -sum(llik);
-
-    }
-
-//' performBSIR
-//' 
-//' A function that performs the BSIR on the REM model
-//'
-//' @param nsim number of simulations
-//' @param mean vector of model MLEs
-//' @param sigma matric of variances and covariances 
-//' @param df degrees of freedom for the multivariate Student t (used as proposal distribution)
-//' @param stats cube of statistics [D*P*M]
-//' @param event_binary matrix of 1/0
-//' @param interevent_time vector of interevent times
-//' @param nthreads number of cores to be used in the parallelized calculation of the nllik()
-//'
-//' @return log-pointwise density value of a specific time point
-//'
-//' @export
-// [[Rcpp::export]]  
-Rcpp::List performBSIR(arma::uword nsim,
-                       arma::vec mean, 
-                       arma::mat sigma, 
-                       double df,
-                       arma::cube stats,
-                       arma::umat event_binary, 
-                       arma::vec interevent_time,
-                       arma::uword nthreads){
-    // (0) create output empty list
-    Rcpp::List out = Rcpp::List::create();
-    arma::uword i;
-    arma::vec density_posterior(nsim,arma::fill::ones);
-
-    // (1) generate from a multivariate Student t and save both draw and density value
-    arma::mat random_t = rmvt(nsim, mean,sigma, df);
-    out["draws"] = random_t;
-
-    arma::vec density_t = dmvt(random_t, mean, sigma, df, false);
-    out["densities"] = density_t;
-
-    // (2) evaluate the generated value with nnlik and get the density
-    for(i = 0; i < nsim; i++){
-        arma::vec draw_loc = random_t.row(i).t();
-        density_posterior(i) = nllik(draw_loc,stats,event_binary,interevent_time,nthreads);
-    }
-    out["densities_post"] = density_posterior;
-
-    return out;
-    }
 
 //' getWAIC
 //'
@@ -516,49 +289,6 @@ arma::mat getWAIC(arma::mat pars, arma::cube stats, arma::umat events, arma::vec
         return out;
     }
 
-//' lpdWAIC
-//'
-//' @param pars parameters values
-//' @param stats sub-array of statistics
-//' @param events sub-matirx of events
-//' @param interevent_time sub-vector of interevent times
-//'
-//' @return matrix of p_m and lpd_m values for a specific stepwise model
-//'
-//' @export
-// [[Rcpp::export]]
-arma::mat lpdWAIC(arma::mat pars, arma::cube stats, arma::umat events, arma::vec interevent_time){
-        arma::uword m,j;
-        arma::mat out(pars.n_cols,interevent_time.n_elem,arma::fill::zeros);
-        for(m = 0; m < interevent_time.n_elem; m++)
-            {
-                for(j = 0; j < pars.n_cols; j++){
-                    out(j,m) = lpd(pars.col(j),stats.slice(m),events.col(m),interevent_time(m));
-                }
-            }
-
-        return out;
-    }
-
-//' logpJi 
-//'
-//' @param pars is a matrix of parameters (note: the order must be aligned witht the column order in 'stats')
-//' @param stats is a matrix of dimensions n_dyads*variables with statistics of interest by column and dyads by row.
-//' @param event is a vector of 1/0 : 1 indicating the observed dyad and 0 the non observed dyads.
-//' @param interevent_time the time difference between the current time point and the previous event time.
-//'
-//' @return vector of log-pointwise density values of a specific time point at different parameters values
-//'
-//' @export
-// [[Rcpp::export]]
-arma::vec logpJi(arma::mat pars, arma::mat stats, arma::uvec event, double interevent_time){
-    arma::uword s;
-    arma::vec out(pars.n_cols,arma::fill::zeros);
-    for(s=0; s<pars.n_cols; s++){
-        out[s] = lpd(pars.col(s), stats, event, interevent_time);
-    }
-    return out;
-    }
 
 
 
@@ -571,7 +301,7 @@ arma::vec logpJi(arma::mat pars, arma::mat stats, arma::uvec event, double inter
 //' @param which_pars which_pars
 //' @param post_betas post_betas
 //' @param post_gammas post_gammas
-//' @param n_pars n_pars
+//' @param U n_pars
 //'
 //' @return a cube of posterior draws.
 //'
@@ -680,9 +410,9 @@ arma::cube getDraws(arma::uvec sample_models,
 //  END Statistics functions //
 
 
-//' tryClone
+//' tryClone (text here)
 //'
-//' @param input
+//' @param input description of input here
 //'
 //' @return input [dataframe]
 //'

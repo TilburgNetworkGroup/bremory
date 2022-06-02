@@ -138,7 +138,7 @@ statisticsREH <- function(formula, data, reh, effects, env){
                             receiver_new <- as.numeric(dict_loc$actors$actorName[which(dict_loc$actors$actorID== receiver_old)])+1
                             type_new <- as.numeric(dict_loc$types$typeName[which(dict_loc$types$typeID == type_old)])+1
 
-                            position_new <- remify::getDyadIndex()+1 #reh$risksetCube[sender_new,receiver_new,type_new]+1
+                            position_new <- 11 #remify::getDyadIndex()+1 #reh$risksetCube[sender_new,receiver_new,type_new]+1
                             position_rearranged <- c(position_rearranged,position_new)
                         }
                     exo_stats_r <- cbind(exo_stats[position_rearranged,-c(1:3)])

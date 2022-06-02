@@ -2,16 +2,16 @@
 % Please edit documentation in R/RcppExports.R
 \name{tryClone}
 \alias{tryClone}
-\title{tryClone}
+\title{tryClone (text here)}
 \usage{
 tryClone(input)
 }
 \arguments{
-\item{input}{}
+\item{input}{description of input here}
 }
 \value{
 input [dataframe]
 }
 \description{
-tryClone
+tryClone (text here)
 }
