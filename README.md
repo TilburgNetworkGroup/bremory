@@ -1,4 +1,4 @@
-# bremory (Version: 1.0.0)
+# bremory (Version: 1.0.0) [beta]
 
 ### Table of contents
 - [bremory (Version: 1.0.0)](#bremory-version-100)
