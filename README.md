@@ -1,5 +1,5 @@
 # bremory (Version: 1.0.0) [beta]
-### Tools for understanding the dynamics of event weights in relational event sequences
+### Modeling Memory Retention in Relational Event Data
 ### Table of contents
 - [About the package](#about-the-package)
 - [Programming Languages](#programming-languages)
@@ -13,7 +13,7 @@ The `bremory` package offers several methods for inquiring about the presence of
  * bayesian semi-parametric approach for modeling memory decay in relational event networks  ([full-text here](https://doi.org/10.1177/00491241221113875), _this is the only method available in the current version, which is still in a beta version_)
  * parametric approach for modeling memory decay in one-type relational event networks (under review, _the method will be available in the development branch_)
  * parametric approach for modeling type-related memory decays in relational event networks (in progress, _the method will be available in the development branch_)
- 
+
 ### Programming Languages
 The package contains code written in:
 * R (>= 4.0.0)
