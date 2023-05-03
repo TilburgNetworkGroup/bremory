@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{getBinaryREH}
 \alias{getBinaryREH}
-\title{getBinaryREH()}
+\title{getBinaryREH}
 \usage{
 getBinaryREH(dyad, D)
 }
@@ -15,5 +15,5 @@ getBinaryREH(dyad, D)
 matrix with dimensions given by the number of events (by row) and the dimension of the risk set (by column) .
 }
 \description{
-getBinaryREH()
+getBinaryREH
 }

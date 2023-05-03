@@ -7,8 +7,8 @@
 intervals(
   K = NULL,
   nsimK = 100,
-  maxWidth = NULL,
-  minDiff = NULL,
+  maxTime = NULL,
+  minWidth = NULL,
   intervals = c("all", "increasing", "decreasing", "equal")
 )
 }
@@ -17,9 +17,9 @@ intervals(
 
 \item{nsimK}{number of simulations per K}
 
-\item{maxWidth}{maximum time length}
+\item{maxTime}{maximum time length}
 
-\item{minDiff}{minimum width (diff will be changed to width)}
+\item{minWidth}{minimum width (diff will be changed to width)}
 
 \item{intervals}{type of intervals to be generated: "all" it will return an object of class "intervals" containing nsimK intervals increasing, nsimK intervals decreasing and 1 interval equal per each K; if "increasing" or "decreasing" only nsimK increasing intervals per each K will be generated; if "equal" only one equal size interval will be returned per each K.}
 }

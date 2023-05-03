@@ -1,15 +1,15 @@
 Type: Package
 Package: bremory
-Title: Modeling memory decay in a relational event history
+Title: Modeling memory decay in relational event networks
 Version: 1.0.0
-Date: 2022-05-27
+Date: 2023-05-01
 Authors@R: c(
     person("Giuseppe", "Arena", , "g.arena@tilburguniversity.edu", role = c("aut", "cre")),
     person("Roger", "Leenders", , "r.t.a.j.leenders@tilburguniversity.edu", role = "ctb"),
     person("Joris", "Mulder", , "j.mulder3@tilburguniversity.edu", role = "ctb")
   )
 Maintainer: Giuseppe Arena <g.arena@tilburguniversity.edu>
-Description: This package offers several approaches (semi-parametric or
+Description: This package offers several approaches (semi-parametric and
     parametric) to model memory decay in relational event networks.
 License: MIT + file LICENSE
 URL: https://github.com/TilburgNetworkGroup/bremory
@@ -18,7 +18,8 @@ Depends:
     R (>= 4.0.0)
 Imports:
     Rcpp (>= 1.0.8.3),
-    remify (>= 2.0.0),
+    remify (>= 3.0.0),
+    remstimate (>= 2.1.0),
     bayestestR,
     abind,
     extraDistr,
@@ -28,7 +29,6 @@ Imports:
     parallel,
     ggplot2,
     gridExtra,
-    remstimate
 Suggests: 
     knitr,
     rmarkdown,
@@ -39,10 +39,12 @@ LinkingTo:
     RcppArmadillo,
     RcppDist,
     remify
+Remotes:
+    TilburgNetworkGroup/remify,
+    TilburgNetworkGroup/remstimate
 VignetteBuilder: 
     knitr
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3
 SystemRequirements: GNU make
-

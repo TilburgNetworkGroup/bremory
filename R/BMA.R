@@ -172,8 +172,9 @@ bma <- function(smm = NULL,
 #######################################################################################
 
 #' @title plot.bma
+#' @rdname plot.bma
 #' @description A function that returns a summary of the temporal network.
-#' @param bma is a \code{bma} object .. draws
+#' @param x is a \code{bma} object .. draws
 #' @param ci ...
 #' @param widthMax ...gamma_max
 #' @param xlim ...
@@ -185,21 +186,22 @@ bma <- function(smm = NULL,
 #' @param save ...
 #' @param output_folder_name ...
 #' @param true_pars ... list of ...
+#' @method plot bma
 #'
 #' @export
-plot.bma <- function(bma, ci = FALSE, widthMax = NULL, xlim, ylim, width, height, ncol, nrow, save = TRUE, output_folder_name = "output_plots", true_pars){
+plot.bma <- function(x, ci = FALSE, widthMax = NULL, xlim, ylim, width, height, ncol, nrow, save = TRUE, output_folder_name = "output_plots", true_pars){
     # out object list with ggplot's inside
     #p_out <- list()
 
-    var_names <- dimnames(bma$draws[[1]])[[2]]
-    P <- length(bma$memory_stats) 
+    var_names <- dimnames(x$draws[[1]])[[2]]
+    P <- length(x$memory_stats) 
     S <- length(var_names) - P
-    weights <- names(bma$draws)
+    weights <- names(x$draws)
     method_plots <- list()
-    if(is.null(widthMax)) widthMax <- max(bma$elapsedTime)
+    if(is.null(widthMax)) widthMax <- max(x$elapsedTime)
     else{
-        if(widthMax > max(bma$elapsedTime))
-        stop(cat('widthMax must be lower or equal than',max(bma$elapsedTime)))
+        if(widthMax > max(x$elapsedTime))
+        stop(cat('widthMax must be lower or equal than',max(x$elapsedTime)))
     }
 
     p_out <- list()
@@ -213,7 +215,7 @@ plot.bma <- function(bma, ci = FALSE, widthMax = NULL, xlim, ylim, width, height
 
             # intercept/exogenous/endogenous without memory histograms 
             if(u > P){
-                data_loc <- data.frame(effect =bma$draws[[weights[w]]][,u,1]) # 4th is the column of the intercept
+                data_loc <- data.frame(effect =x$draws[[weights[w]]][,u,1]) # 4th is the column of the intercept
                 density_intercept <- stats::density(data_loc$effect)
                 lower_upper_intercept <- as.vector(HDInterval::hdi(density_intercept, credMass=0.95))
                 
@@ -232,12 +234,12 @@ plot.bma <- function(bma, ci = FALSE, widthMax = NULL, xlim, ylim, width, height
             #for(u in 1:(dim(draws$posterior_draws[[weights[w]]])[2]-1)){
 
             else{
-                df_loc <- bma$draws[[weights[w]]][,u,]
+                df_loc <- x$draws[[weights[w]]][,u,]
                 df_data_loc <- apply(df_loc,2,function(x) as.vector(HDInterval::hdi(x, credMass=0.95)))
                 data_median <- apply(df_loc,2,function(x) stats::quantile(x,c(0.5),na.rm=TRUE))
                 data_mean <- apply(df_loc,2,function(x) mean(x,na.rm=TRUE))
                 map_loc <- apply(df_loc,2,function(x) as.numeric(bayestestR::map_estimate(x))) 
-                data_loc <- data.frame(time = stats::na.omit(bma$elapsedTime), 
+                data_loc <- data.frame(time = stats::na.omit(x$elapsedTime), 
                                         lb = df_data_loc[1,],
                                         mode=map_loc, 
                                         ub = df_data_loc[2,],

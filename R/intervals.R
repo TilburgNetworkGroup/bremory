@@ -4,38 +4,39 @@
 #'
 #' @param K intervals dimensions
 #' @param nsimK number of simulations per K
-#' @param maxWidth maximum time length
-#' @param minDiff minimum width (diff will be changed to width)
+#' @param maxTime maximum time length
+#' @param minWidth minimum width (diff will be changed to width)
 #' @param intervals type of intervals to be generated: "all" it will return an object of class "intervals" containing nsimK intervals increasing, nsimK intervals decreasing and 1 interval equal per each K; if "increasing" or "decreasing" only nsimK increasing intervals per each K will be generated; if "equal" only one equal size interval will be returned per each K.
 #'
 #' @return  the function updates the object width in the getStepwiseModels environment.
 #' @export
-intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, intervals = c("all", "increasing", "decreasing","equal")){
+intervals <- function(K = NULL, nsimK = 1e02, maxTime = NULL, minWidth = NULL, intervals = c("all", "increasing", "decreasing","equal")){
 
+    # add tests and check here (!!)
     K_input <- K
     if(intervals == "all"){
         nsim <- nsimK/2  
         widths_matrix <- matrix(NA, nrow = (1+nsimK)*length(K), ncol = (max(K)+1) ) 
         widths_type <- NULL
         iter_K <- 1
-        minDiff <- minDiff/maxWidth
+        minWidth <- minWidth/maxTime
         for(k in min(K):max(K)){
             out_K <- NULL
              # for the storing of widths
             matrix_loc <- matrix(NA, nrow = (2*nsim+1), ncol = (k+1)) 
 
             # (0) equal widths
-            matrix_loc[1,] <- seq(0,maxWidth,length=(k+1))
+            matrix_loc[1,] <- seq(0,maxTime,length=(k+1))
             
             # (1) increasing widths
             out_K <- matrix(unlist(lapply(1:nsim,function(s){
             diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,k))))
-                                while(min(diffs)<minDiff){
+                                while(min(diffs)<minWidth){
                                     diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,k))))
                                 }
                                 c(0,cumsum(diffs))
                                 })),byrow=TRUE,ncol=k+1)
-            out_K <- out_K * maxWidth
+            out_K <- out_K * maxTime
             matrix_loc[2:(nsim+1),] <- out_K
  
 
@@ -59,26 +60,30 @@ intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, i
     }
 
     if(intervals == "increasing"){
+        minWidth <- minWidth/maxTime
+        # increasing widths
         diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,K))))
-        while(min(diffs)<minDiff){
-                diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,K))))
+        while(min(diffs)<minWidth){
+            diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,K))))
         }
-        return( c(0,cumsum(diffs)) * maxWidth )
+        return( c(0,cumsum(diffs)) * maxTime )
     }
 
 
     if(intervals == "decreasing"){
+        minWidth <- minWidth/maxTime
+        # decreasing widths
         diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,K))))
-        while(min(diffs)<minDiff){
-                diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,K))))
+        while(min(diffs)<minWidth){
+            diffs <- sort(c(extraDistr::rdirichlet(1,alpha=rep(1,K))))
         }
         diffs <- sort(diffs, decreasing = TRUE)
-        return( c(0,cumsum(diffs)) * maxWidth )
+        return( c(0,cumsum(diffs)) * maxTime )
     }
 
 
     if(intervals == "equal"){
-        return(seq(0,maxWidth,length=(K+1)))
+        return(seq(0,maxTime,length=(K+1)))
     }
 
     ##################
@@ -87,7 +92,7 @@ intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, i
 
 
     #Q <- length(K_range)*nsimK
-    #minDiff <- 0.1 #maxWidth*0.02 #it was set equal to median(diff(c(0,env$initializeREH$t)))
+    #minWidth <- 0.1 #maxTime*0.02 #it was set equal to median(diff(c(0,env$initializeREH$t)))
     #matrix_out <- matrix(NA, nrow = Q, ncol = (max(K_range)+1))
 
     #if(intervals == "default"){
@@ -99,9 +104,9 @@ intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, i
     #    while(j<=nsimK)
     #    {
     #        diff_loc <- 0
-    #        while(any(diff_loc<minDiff))
+    #        while(any(diff_loc<minWidth))
     #        {
-    #            widths_loc <- sort(c(0,runif((K_range[i]-1),0,maxWidth),maxWidth))
+    #            widths_loc <- sort(c(0,runif((K_range[i]-1),0,maxTime),maxTime))
     #            diff_loc <- diff(widths_loc)        
     #        }
     #        matrix_loc[j,] <- widths_loc #c(widths_loc,Inf)
@@ -128,10 +133,10 @@ intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, i
     #            cond <- TRUE
     #            while(cond) 
     #            {
-    #                widths_loc <- sort(c(0,runif((K_range[i]-1),minDiff,maxWidth-minDiff),maxWidth))
+    #                widths_loc <- sort(c(0,runif((K_range[i]-1),minWidth,maxTime-minWidth),maxTime))
     #                diff_loc <- diff(widths_loc)   
     #                is_unsorted <- is.unsorted(diff_loc)
-    #                cond <- (any(diff_loc<minDiff) | is_unsorted)
+    #                cond <- (any(diff_loc<minWidth) | is_unsorted)
 
     #            }
     #            matrix_loc[j,] <- widths_loc #c(widths_loc,Inf)
@@ -153,14 +158,14 @@ intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, i
    #     out_K <- NULL
    #     count <- 0
    #     matrix_loc <- matrix(NA, nrow = (2*nsim+1), ncol = (K+1)) # old row size with equal-ish (3*nsim+1) 
-   #     matrix_loc[1,] <- seq(0,maxWidth,length=(K+1))
+   #     matrix_loc[1,] <- seq(0,maxTime,length=(K+1))
         
          # ...(1) increasing widths
    #     while(count!=nsim){
-   #         widths_eq <- seq(0,maxWidth,length=(K+2))
-   #         widths_eq[2] <- runif(1,minDiff,widths_eq[2]) #minDiff+0.1
+   #         widths_eq <- seq(0,maxTime,length=(K+2))
+   #         widths_eq[2] <- runif(1,minWidth,widths_eq[2]) #minWidth+0.1
    #         for(k in 3:(K+1)){  
-   #             widths_eq[k] <- runif(1,widths_eq[k-1]+(widths_eq[k-1]-widths_eq[k-2]),widths_eq[k]) # maxWidth
+   #             widths_eq[k] <- runif(1,widths_eq[k-1]+(widths_eq[k-1]-widths_eq[k-2]),widths_eq[k]) # maxTime
    #         }
             
    #         widths_eq <- widths_eq[-(length(widths_eq)-1)]
@@ -182,8 +187,8 @@ intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, i
         ####### OLD CODE #######
         ########################
         # ...(3) small_large/large_small_widths (equal-ish widths)
-        #deltas_K <- runif(nsim/2,0,minDiff)
-        #seq_K <- seq(0,maxWidth,length=(K+1))
+        #deltas_K <- runif(nsim/2,0,minWidth)
+        #seq_K <- seq(0,maxTime,length=(K+1))
         #ncol_K <- K-1
         #ones_K <- 1:ncol_K
         #deltas_matrix_K <- matrix(deltas_K,nrow=nsim/2,ncol=ncol_K)
@@ -191,12 +196,12 @@ intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, i
         # small - large
         #signed_vec_K <- sapply(1:length(ones_K),function(x) if(x%%2 ==0) 1 else{-1})
         #variations_small_large_K <- (deltas_matrix_K * matrix(signed_vec_K,nrow=nsim/2,ncol=ncol_K,byrow=TRUE)) + matrix(seq_K[-c(1,length(seq_K))],nrow=nsim/2,ncol=(K-1),byrow=TRUE)
-        #small_large_K <- cbind(0,variations_small_large_K,maxWidth)
+        #small_large_K <- cbind(0,variations_small_large_K,maxTime)
         
         # large - small
         #signed_vec_K <- sapply(1:length(ones_K),function(x) if(x%%2 ==0) -1 else{1})
         #variations_large_small_K <- (deltas_matrix_K * matrix(signed_vec_K,nrow=nsim/2,ncol=ncol_K,byrow=TRUE)) + matrix(seq_K[-c(1,length(seq_K))],nrow=nsim/2,ncol=(K-1),byrow=TRUE)
-        #large_small_K <- cbind(0,variations_large_small_K,maxWidth)
+        #large_small_K <- cbind(0,variations_large_small_K,maxTime)
         
         # save intervals
         #matrix_loc[c((2*nsim+2):((nsim*3)+1)),] <- rbind(small_large_K,large_small_K)
@@ -220,14 +225,14 @@ intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, i
   #      out_K <- NULL
   #      count <- 0
   #      matrix_loc <- matrix(NA, nrow = (2*nsim+1), ncol = (K+1)) # old row size with equal-ish (3*nsim+1) 
-  #      matrix_loc[1,] <- seq(0,maxWidth,length=(K+1))
+  #      matrix_loc[1,] <- seq(0,maxTime,length=(K+1))
 
   #          # ...(1) increasing widths
   #      while(count!=nsim){
-  #          widths_eq <- seq(0,maxWidth,length=(K+2))
-  #          widths_eq[2] <- runif(1,minDiff,widths_eq[2]) #minDiff+0.1
+  #          widths_eq <- seq(0,maxTime,length=(K+2))
+  #          widths_eq[2] <- runif(1,minWidth,widths_eq[2]) #minWidth+0.1
   #          for(k in 3:(K+1)){  
-  #              widths_eq[k] <- runif(1,widths_eq[k-1]+(widths_eq[k-1]-widths_eq[k-2]),maxWidth) 
+  #              widths_eq[k] <- runif(1,widths_eq[k-1]+(widths_eq[k-1]-widths_eq[k-2]),maxTime) 
   #          }
             
   #          widths_eq <- widths_eq[-(length(widths_eq)-1)]
@@ -261,16 +266,16 @@ intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, i
     #        print(K)
     #        K <- K_range[k]
     #        matrix_loc <- matrix(NA, nrow = (2*nsim+1), ncol = (K+1))
-    #        matrix_loc[1,] <- seq(0,maxWidth,length=(K+1))
+    #        matrix_loc[1,] <- seq(0,maxTime,length=(K+1))
 
     #        # ...(1) increasing widths
     #        for(j in 2:(nsim+1)){
     #            cond <- TRUE
     #            while(cond){
     #                par <- runif(1)
-    #                widths_loc <- c(cumsum(c(0,diff(sapply(0:(K-1),function(x) maxWidth*exp(par*x)/exp(par*maxWidth))))),maxWidth)
+    #                widths_loc <- c(cumsum(c(0,diff(sapply(0:(K-1),function(x) maxTime*exp(par*x)/exp(par*maxTime))))),maxTime)
     #                diff_loc <- diff(widths_loc)
-    #                cond <- any(diff_loc<minDiff)
+    #                cond <- any(diff_loc<minWidth)
     #                print("cond")
     #            }
     #            matrix_loc[j,] <- widths_loc
@@ -288,9 +293,9 @@ intervals <- function(K = NULL, nsimK = 1e02, maxWidth = NULL, minDiff = NULL, i
     #    }       
     #}
 
-    #if(intervals == "find_maxWidth"){
-    #    gamma_1 <- seq(minDiff,maxWidth,length=nsimK)
-    #    env$stepwiseModelsREH$widths <- cbind(0,gamma_1,gamma_1*2,gamma_1*3,gamma_1*4) #[1] cbind(0,gamma_1,max(env$initializeREH$edgelist[,1])) [2]cbind(0,minDiff,gamma_1)
+    #if(intervals == "find_maxTime"){
+    #    gamma_1 <- seq(minWidth,maxTime,length=nsimK)
+    #    env$stepwiseModelsREH$widths <- cbind(0,gamma_1,gamma_1*2,gamma_1*3,gamma_1*4) #[1] cbind(0,gamma_1,max(env$initializeREH$edgelist[,1])) [2]cbind(0,minWidth,gamma_1)
     #}
     ##################
     # OLD CODE END   #

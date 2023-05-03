@@ -11,6 +11,19 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// getExogenousVariablesArray
+Rcpp::List getExogenousVariablesArray(Rcpp::StringVector exos, Rcpp::List data, Rcpp::List reh);
+RcppExport SEXP _bremory_getExogenousVariablesArray(SEXP exosSEXP, SEXP dataSEXP, SEXP rehSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::StringVector >::type exos(exosSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type reh(rehSEXP);
+    rcpp_result_gen = Rcpp::wrap(getExogenousVariablesArray(exos, data, reh));
+    return rcpp_result_gen;
+END_RCPP
+}
 // getBinaryREH
 arma::mat getBinaryREH(arma::uvec dyad, arma::uword D);
 RcppExport SEXP _bremory_getBinaryREH(SEXP dyadSEXP, SEXP DSEXP) {
@@ -24,8 +37,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // getIntervals
-void getIntervals(Rcpp::Environment env, arma::vec widths, arma::vec time, arma::uword M, arma::uword K_q, int nthreads);
-RcppExport SEXP _bremory_getIntervals(SEXP envSEXP, SEXP widthsSEXP, SEXP timeSEXP, SEXP MSEXP, SEXP K_qSEXP, SEXP nthreadsSEXP) {
+void getIntervals(Rcpp::Environment env, arma::vec widths, arma::vec time, arma::uword M, arma::uword K_q, int ncores);
+RcppExport SEXP _bremory_getIntervals(SEXP envSEXP, SEXP widthsSEXP, SEXP timeSEXP, SEXP MSEXP, SEXP K_qSEXP, SEXP ncoresSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::Environment >::type env(envSEXP);
@@ -33,52 +46,105 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type time(timeSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type M(MSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type K_q(K_qSEXP);
-    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    getIntervals(env, widths, time, M, K_q, nthreads);
+    Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
+    getIntervals(env, widths, time, M, K_q, ncores);
     return R_NilValue;
 END_RCPP
 }
-// getCountsOMP
-arma::mat getCountsOMP(arma::mat binaryREH, arma::mat lbs_ubs, int nthreads);
-RcppExport SEXP _bremory_getCountsOMP(SEXP binaryREHSEXP, SEXP lbs_ubsSEXP, SEXP nthreadsSEXP) {
+// getCountsOMP_old
+arma::mat getCountsOMP_old(arma::mat binaryREH, arma::mat lbs_ubs, int ncores);
+RcppExport SEXP _bremory_getCountsOMP_old(SEXP binaryREHSEXP, SEXP lbs_ubsSEXP, SEXP ncoresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type binaryREH(binaryREHSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type lbs_ubs(lbs_ubsSEXP);
-    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(getCountsOMP(binaryREH, lbs_ubs, nthreads));
+    Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
+    rcpp_result_gen = Rcpp::wrap(getCountsOMP_old(binaryREH, lbs_ubs, ncores));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getCounts
+arma::mat getCounts(arma::vec dyad, arma::uword D, arma::mat lbs_ubs, int ncores);
+RcppExport SEXP _bremory_getCounts(SEXP dyadSEXP, SEXP DSEXP, SEXP lbs_ubsSEXP, SEXP ncoresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type dyad(dyadSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type D(DSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type lbs_ubs(lbs_ubsSEXP);
+    Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
+    rcpp_result_gen = Rcpp::wrap(getCounts(dyad, D, lbs_ubs, ncores));
     return rcpp_result_gen;
 END_RCPP
 }
 // getCountsIndex
-arma::vec getCountsIndex(arma::mat intervals, arma::mat counts, int nthreads);
-RcppExport SEXP _bremory_getCountsIndex(SEXP intervalsSEXP, SEXP countsSEXP, SEXP nthreadsSEXP) {
+arma::vec getCountsIndex(arma::mat intervals, arma::mat counts, int ncores);
+RcppExport SEXP _bremory_getCountsIndex(SEXP intervalsSEXP, SEXP countsSEXP, SEXP ncoresSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type intervals(intervalsSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type counts(countsSEXP);
-    Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(getCountsIndex(intervals, counts, nthreads));
+    Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
+    rcpp_result_gen = Rcpp::wrap(getCountsIndex(intervals, counts, ncores));
     return rcpp_result_gen;
 END_RCPP
 }
-// getEndoEffects
-arma::cube getEndoEffects(Rcpp::Environment env, arma::uword M, arma::uword D, arma::vec time, arma::mat edgelist, arma::umat risksetMatrix, arma::umat risksetCube0, arma::uword nthreads);
-RcppExport SEXP _bremory_getEndoEffects(SEXP envSEXP, SEXP MSEXP, SEXP DSEXP, SEXP timeSEXP, SEXP edgelistSEXP, SEXP risksetMatrixSEXP, SEXP risksetCube0SEXP, SEXP nthreadsSEXP) {
+// getIntervalStatistics
+void getIntervalStatistics(Rcpp::Environment env, arma::mat counts, arma::mat intervals, const arma::vec& actor1, const arma::vec& actor2, arma::vec time, arma::uword M, int N, arma::uword D, arma::uword K, std::vector<std::string> statistics, std::string model, bool senderRate, int ncores);
+RcppExport SEXP _bremory_getIntervalStatistics(SEXP envSEXP, SEXP countsSEXP, SEXP intervalsSEXP, SEXP actor1SEXP, SEXP actor2SEXP, SEXP timeSEXP, SEXP MSEXP, SEXP NSEXP, SEXP DSEXP, SEXP KSEXP, SEXP statisticsSEXP, SEXP modelSEXP, SEXP senderRateSEXP, SEXP ncoresSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::Environment >::type env(envSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type counts(countsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type intervals(intervalsSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type actor1(actor1SEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type actor2(actor2SEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type time(timeSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type M(MSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type D(DSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type K(KSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type statistics(statisticsSEXP);
+    Rcpp::traits::input_parameter< std::string >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< bool >::type senderRate(senderRateSEXP);
+    Rcpp::traits::input_parameter< int >::type ncores(ncoresSEXP);
+    getIntervalStatistics(env, counts, intervals, actor1, actor2, time, M, N, D, K, statistics, model, senderRate, ncores);
+    return R_NilValue;
+END_RCPP
+}
+// arrangeStatistics
+arma::cube arrangeStatistics(Rcpp::Environment env, arma::mat effectsMatrix, std::vector<std::string> names, bool intercept, int M, int D, int S);
+RcppExport SEXP _bremory_arrangeStatistics(SEXP envSEXP, SEXP effectsMatrixSEXP, SEXP namesSEXP, SEXP interceptSEXP, SEXP MSEXP, SEXP DSEXP, SEXP SSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::Environment >::type env(envSEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type M(MSEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type D(DSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type time(timeSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type edgelist(edgelistSEXP);
-    Rcpp::traits::input_parameter< arma::umat >::type risksetMatrix(risksetMatrixSEXP);
-    Rcpp::traits::input_parameter< arma::umat >::type risksetCube0(risksetCube0SEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(getEndoEffects(env, M, D, time, edgelist, risksetMatrix, risksetCube0, nthreads));
+    Rcpp::traits::input_parameter< arma::mat >::type effectsMatrix(effectsMatrixSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type names(namesSEXP);
+    Rcpp::traits::input_parameter< bool >::type intercept(interceptSEXP);
+    Rcpp::traits::input_parameter< int >::type M(MSEXP);
+    Rcpp::traits::input_parameter< int >::type D(DSEXP);
+    Rcpp::traits::input_parameter< int >::type S(SSEXP);
+    rcpp_result_gen = Rcpp::wrap(arrangeStatistics(env, effectsMatrix, names, intercept, M, D, S));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getStatisticsNames
+std::vector<std::string> getStatisticsNames(Rcpp::List stats_names, arma::mat effectsMatrix, std::vector<std::string> names, bool intercept, int M, int D, int S);
+RcppExport SEXP _bremory_getStatisticsNames(SEXP stats_namesSEXP, SEXP effectsMatrixSEXP, SEXP namesSEXP, SEXP interceptSEXP, SEXP MSEXP, SEXP DSEXP, SEXP SSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type stats_names(stats_namesSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type effectsMatrix(effectsMatrixSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type names(namesSEXP);
+    Rcpp::traits::input_parameter< bool >::type intercept(interceptSEXP);
+    Rcpp::traits::input_parameter< int >::type M(MSEXP);
+    Rcpp::traits::input_parameter< int >::type D(DSEXP);
+    Rcpp::traits::input_parameter< int >::type S(SSEXP);
+    rcpp_result_gen = Rcpp::wrap(getStatisticsNames(stats_names, effectsMatrix, names, intercept, M, D, S));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -155,11 +221,15 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_bremory_getExogenousVariablesArray", (DL_FUNC) &_bremory_getExogenousVariablesArray, 3},
     {"_bremory_getBinaryREH", (DL_FUNC) &_bremory_getBinaryREH, 2},
     {"_bremory_getIntervals", (DL_FUNC) &_bremory_getIntervals, 6},
-    {"_bremory_getCountsOMP", (DL_FUNC) &_bremory_getCountsOMP, 3},
+    {"_bremory_getCountsOMP_old", (DL_FUNC) &_bremory_getCountsOMP_old, 3},
+    {"_bremory_getCounts", (DL_FUNC) &_bremory_getCounts, 4},
     {"_bremory_getCountsIndex", (DL_FUNC) &_bremory_getCountsIndex, 3},
-    {"_bremory_getEndoEffects", (DL_FUNC) &_bremory_getEndoEffects, 8},
+    {"_bremory_getIntervalStatistics", (DL_FUNC) &_bremory_getIntervalStatistics, 14},
+    {"_bremory_arrangeStatistics", (DL_FUNC) &_bremory_arrangeStatistics, 7},
+    {"_bremory_getStatisticsNames", (DL_FUNC) &_bremory_getStatisticsNames, 7},
     {"_bremory_lpd", (DL_FUNC) &_bremory_lpd, 4},
     {"_bremory_getWAIC", (DL_FUNC) &_bremory_getWAIC, 4},
     {"_bremory_smoothing_posterior", (DL_FUNC) &_bremory_smoothing_posterior, 6},

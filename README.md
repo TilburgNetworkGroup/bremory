@@ -1,45 +1,47 @@
-# bremory (Version: 1.0.0) [beta]
-### Modeling Memory Retention in Relational Event Data
-### Table of contents
-- [About the package](#about-the-package)
-- [Programming Languages](#programming-languages)
-- [Installing the package](#installing-the-package)
-- [Vignettes](#vignettes)
-- [Funding](#funding)
-- [Author](#author)
+# bremory  <img align="right" width="185" src='man/figures/bremory-logo.svg'>
 
-### About the package
-The `bremory` package offers several methods for inquiring about the presence of memory decay in Relational Event Networks:
- * bayesian semi-parametric approach for modeling memory decay in relational event networks  ([full-text here](https://doi.org/10.1177/00491241221113875), _this is the only method available in the current version, which is still in a beta version_)
- * parametric approach for modeling memory decay in one-type relational event networks (under review, _the method will be available in the development branch_)
- * parametric approach for modeling type-related memory decays in relational event networks (in progress, _the method will be available in the development branch_)
+[![github-repo-status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![R-package-version](https://img.shields.io/github/r-package/v/TilburgNetworkGroup/bremory)](https://www.github.com/TilburgNetworkGroup/bremory)
 
-### Programming Languages
-The package contains code written in:
-* R (>= 4.0.0)
-* Rcpp (>= 1.0.8.3) and RcppArmadillo (>= 0.11)
-* C++14
+#### _The package is currently being upgraded, its full functionalities will be available in the coming weeks - May, 2023_
+
+---
+
+## Modeling Memory Retention in Relational Event Data
+The `bremory` package offers several methods for inquiring about the presence of memory in relational event networks:
+ * a bayesian semi-parametric approach for modeling memory decay (Arena et al. 2022)
+ * a parametric approach for modeling memory decay in one-type relational event networks (Arena et al. 2023)
+ * a parametric approach for modeling type-related memory decays (_method not yet published_)
+ 
 	
-### Installing the package
-To install the package in R using `devtools`:
+## Installation
+Install the package in R using `devtools` or `remotes`:
 
 ```
-library(devtools)
+# via `devtools`
 devtools::install_github(repo = "TilburgNetworkGroup/bremory", build_vignettes = TRUE)
 
-# load the package
-library(bremory)
+# via `remotes`
+remotes::install_github(repo = "TilburgNetworkGroup/bremory", build_vignettes = TRUE)
 ```
 
-### Vignettes
-In order to provide a thorough explanation over the functions inside the package, the user can read the vignette with examples and explanation
+## Vignettes
 
+List all the vignettes available with the installed version of `bremory`
 ```
-vignette(package = "bremory") # returns all the vignettes available with the current version of the package 
+vignette(package = "bremory") 
 ```
 
-### Funding
+## Author
+Giuseppe Arena, Tilburg University (Tilburg, The Netherlands). (g.arena@tilburguniversity.edu)
+
+## Funding
 The funder of this work is the ERC and the ERC project number is 758791.
 
-### Author
-Giuseppe Arena, Tilburg University (Tilburg, The Netherlands). (g.arena@tilburguniversity.edu)
+---
+
+## References
+
+Arena, G., Mulder, J., & Leenders, R. Th. A. J. (2022). _A Bayesian Semi-Parametric Approach for Modeling Memory Decay in Dynamic Social Networks_. Sociological Methods & Research, 0(0). https://doi.org/10.1177/00491241221113875
+
+Arena, G., Mulder, J., & Leenders, R. (2023). _How fast do we forget our past social interactions? Understanding memory retention with parametric decays in relational event models_. Network Science, 1-28. [doi:10.1017/nws.2023.5](https://doi.org/10.1017/nws.2023.5)

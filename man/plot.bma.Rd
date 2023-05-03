@@ -5,7 +5,7 @@
 \title{plot.bma}
 \usage{
 \method{plot}{bma}(
-  bma,
+  x,
   ci = FALSE,
   widthMax = NULL,
   xlim,
@@ -20,7 +20,7 @@
 )
 }
 \arguments{
-\item{bma}{is a \code{bma} object .. draws}
+\item{x}{is a \code{bma} object .. draws}
 
 \item{ci}{...}
 

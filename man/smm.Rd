@@ -2,54 +2,46 @@
 % Please edit documentation in R/smm.R
 \name{smm}
 \alias{smm}
-\title{smm (Stepwise Memory Models)}
+\title{Step-wise Memory Model}
 \usage{
 smm(
-  formula = NULL,
-  reh = NULL,
+  formula,
+  reh,
+  intervals,
   data = NULL,
-  effects = NULL,
-  intervals = NULL,
   WAIC = TRUE,
   ELPD = FALSE,
-  firstEvent = NULL,
-  lastEvent = NULL,
-  nthreads = NULL,
-  filename = "simulation_0",
-  env = globalenv(),
+  ncores = 1L,
+  subset = NULL,
   ...
 )
 }
 \arguments{
-\item{formula}{[not working]formula specifing the linear predictor (this argument is still being coded, plase use the argument 'effects')}
+\item{formula}{formula specifing the linear predictor (list of formulas if actor-oriented model)}
 
-\item{reh}{either a 'reh' object (see remify::reh() function) or the edgelist}
+\item{reh}{either a 'reh' object (see remify::remify() function) or the edgelist to process}
 
-\item{data}{[not working]list of exogenous variables (time varying or not) (this argument is still being coded, please use the argument 'effects')}
+\item{intervals}{interval(s) defining the step-wise function(s). It can be specified in two different ways: (1) as a list of intervals with "widths", "K"; (2) as list specifying: a vector of integers indicating the number of steps per stepwise model ("K"), the maximum time width for intervals ("maxTime"), the minimum width for intervals ("minWidth"), the number of simulations per each K ("nsimK"). With the second specification, the function bremory::intervals() will be used.}
 
-\item{effects}{[working]list of two objects: effects$endogenous is a vector of strings with specified the effects of interest; effects$exogenous is an array [M*dyads*exogenous_effects]}
+\item{data}{[\emph{optional}] list of exogenous variables (time varying or not)}
 
-\item{intervals}{it can be specified in two different ways: (1) as a list of intervals with "widths", "K"; (2) as list specifying: a vector of integers indicating the number of steps per stepwise model ("K"), the maximum time width for intervals ("maxWidth"), the minimum width for intervals ("minDiff"), the number of simulations per each K ("nsimK"). With the second specification, the function bremory::intervals() will be used.}
+\item{WAIC}{[\emph{optional}] default is TRUE and is needed where WAIC weights have to be estimated}
 
-\item{WAIC}{default is TRUE and is needed where WAIC weights have to be estimated}
+\item{ELPD}{[\emph{optional}] default is FALSE and is TRUE if ELPD-LFO has to be calculated (PSIS approximation is used [ref. to literature here] for one-step-ahead predictions). This procedure might slow down the algorithm. [please do not run. Not yet implemented]}
 
-\item{ELPD}{default is FALSE and is TRUE if ELPD-LFO has to be calculated (PSIS approximation is used [ref. to literature] for one-step-ahead predictions). This procedure might slow down the algorithm.}
+\item{ncores}{[\emph{optional}] number of ncores to use for the parallelization}
 
-\item{firstEvent}{integer indicating the event at which start the event sequence and statistic in the estimation stage}
+\item{subset}{[\emph{optional}] first and last event index defining the sub-history on which to estimate the stepwise memory model(s)}
 
-\item{lastEvent}{integer indicating the event at which stop the event sequence and statistic in the estimation stage}
-
-\item{nthreads}{number of threads to create}
-
-\item{filename}{a string indicating the name of the file .RData that will save results each 20 models.}
-
-\item{env}{environment where the user is currently working (default is set to .GlobalEnv, globalenv())}
-
-\item{...}{other arguments referring to those in bremory::elpd()}
+\item{...}{[\emph{optional}] other arguments referring to those in bremory::elpd()}
 }
 \value{
-object of class 'ssm'
+object of class 'smm' with attributes and methods explained in the vignette(topic = "smm", package = "bremory")
 }
 \description{
-A function which run the estimation of Q models and updates the environment 'stepwiseModels'
+A function for the estimation of one or more step-wise models (at the moment working without remstats package)
+}
+\examples{
+
+# examples here
 }

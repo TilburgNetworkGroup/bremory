@@ -1,0 +1,29 @@
+citHeader("To cite 'bremory' in publications use:")
+
+citEntry(
+  entry    = "Article",
+  title    = "A Bayesian Semi-Parametric Approach for Modeling Memory Decay in Dynamic Social Networks",
+  author   = "Giuseppe Arena and Joris Mulder and Roger Th. A.J. Leenders",
+  journal  = "Sociological Methods & Research",
+  year     = "2022",
+  volume   = "0",
+  number   = "0",
+  url      = "https://doi.org/10.1177/00491241221113875",
+  textVersion = paste(
+"Arena, G., Mulder, J., & Leenders, R. Th. A. J. (2022). A Bayesian Semi-Parametric Approach for Modeling Memory Decay in Dynamic Social Networks. Sociological Methods & Research, 0(0). https://doi.org/10.1177/00491241221113875"
+  )
+)
+
+
+citEntry(
+  entry    = "Article",
+  title    = "How fast do we forget our past social interactions? Understanding memory retention with parametric decays in relational event models",
+  author   = "Giuseppe Arena and Joris Mulder and Roger Th. A.J. Leenders",
+  journal  = "Network Science",
+  year     = "2023",
+  pages    = "1-28" ,
+  url      = "https://doi.org/10.1017/nws.2023.5",
+  textVersion = paste(
+  "Arena, G., Mulder, J., & Leenders, R. (2023). How fast do we forget our past social interactions? Understanding memory retention with parametric decays in relational event models. Network Science, 1-28. https://doi.org/10.1017/nws.2023.5"
+  )
+)

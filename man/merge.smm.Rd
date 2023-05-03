@@ -4,11 +4,11 @@
 \alias{merge.smm}
 \title{merge.smm}
 \usage{
-\method{merge}{smm}(smm)
+\method{merge}{smm}(x)
 }
 \arguments{
-\item{smm}{a list of \code{smm} objects}
+\item{x}{a list of \code{smm} objects}
 }
 \description{
-A function that returns a summary of the temporal network.
+A function that given a list of smm object, it merges into a single 'smm' object
 }
